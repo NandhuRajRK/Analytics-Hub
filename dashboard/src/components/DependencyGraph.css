@@ -1,0 +1,170 @@
+/* Dependency Graph specific styles */
+.graph-container {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  overflow: hidden;
+  min-height: 650px;
+}
+
+.graph-container svg {
+  border-radius: 8px;
+  width: 100%;
+  height: 600px;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.node {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.node:hover {
+  opacity: 0.8;
+}
+
+.node circle {
+  transition: stroke-width 0.2s;
+}
+
+.node:hover circle {
+  stroke-width: 3px;
+}
+
+.node text {
+  pointer-events: none;
+  user-select: none;
+  font-size: 10px;
+  font-weight: 400;
+}
+
+/* Prevent text overlap in dependency graph */
+.graph-container text {
+  font-size: 11px;
+  font-weight: 500;
+  text-anchor: middle;
+}
+
+/* Ensure proper spacing for graph elements */
+.graph-container .link {
+  stroke-width: 2px;
+  opacity: 0.7;
+}
+
+.graph-container .link:hover {
+  opacity: 1;
+  stroke-width: 3px;
+}
+
+.node-details {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.node-details h3 {
+  margin: 0 0 8px 0;
+  color: #1f2937;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.node-details p {
+  margin: 4px 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dependency-graph-container {
+    padding: 16px;
+  }
+  
+  .dependency-graph-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  
+  .graph-legend {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  
+  .graph-container {
+    padding: 12px;
+  }
+}
+
+/* Chart Export Styles */
+.chart-header-with-export {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-header-with-export h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.chart-export-buttons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Export Button Styles */
+.export-btn {
+  padding: 6px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: white;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.export-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.export-btn:active {
+  transform: translateY(0);
+}
+
+.export-btn.export-pdf {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.export-btn.export-pdf:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.export-btn.export-word {
+  color: #2563eb;
+  border-color: #dbeafe;
+}
+
+.export-btn.export-word:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+}
