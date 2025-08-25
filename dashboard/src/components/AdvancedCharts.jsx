@@ -507,146 +507,216 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         projects: projectNodes.length
       });
 
-      // Create a simple flow visualization
+      // Create a simple flow visualization with better spacing
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
       
-      // Portfolio column (left)
-      const portfolioWidth = chartWidth * 0.25;
-      const portfolioHeight = chartHeight / Math.max(portfolioNodes.length, 1);
+      // Portfolio column (left) - Enhanced with better spacing
+      const portfolioWidth = chartWidth * 0.28;
+      const portfolioHeight = Math.min(40, chartHeight / Math.max(portfolioNodes.length, 1));
+      const portfolioSpacing = (chartHeight - (portfolioNodes.length * portfolioHeight)) / (portfolioNodes.length + 1);
       
       portfolioNodes.forEach((node, i) => {
-        svg.append("rect")
+        const y = margin.top + portfolioSpacing + i * (portfolioHeight + portfolioSpacing);
+        
+        // Enhanced portfolio rectangle with gradient
+        const portfolioRect = svg.append("rect")
           .attr("x", margin.left)
-          .attr("y", margin.top + i * portfolioHeight)
+          .attr("y", y)
           .attr("width", portfolioWidth)
-          .attr("height", portfolioHeight * 0.8)
+          .attr("height", portfolioHeight)
           .attr("fill", "#2563eb")
-          .attr("opacity", 0.8)
-          .attr("rx", 4);
+          .attr("opacity", 0.9)
+          .attr("rx", 8)
+          .attr("stroke", "#1e40af")
+          .attr("stroke-width", 2)
+          .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.1))");
 
+        // Portfolio name with better typography
         svg.append("text")
           .attr("x", margin.left + portfolioWidth / 2)
-          .attr("y", margin.top + i * portfolioHeight + portfolioHeight * 0.4)
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "middle")
-          .style("font-size", "12px")
-          .style("fill", "white")
-          .style("font-weight", "bold")
-          .text(node.id);
-
-        svg.append("text")
-          .attr("x", margin.left + portfolioWidth / 2)
-          .attr("y", margin.top + i * portfolioHeight + portfolioHeight * 0.7)
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "middle")
-          .style("font-size", "10px")
-          .style("fill", "white")
-          .text(`$${(node.value / 1000000).toFixed(1)}M`);
-      });
-
-      // Program column (center)
-      const programWidth = chartWidth * 0.25;
-      const programHeight = chartHeight / Math.max(programNodes.length, 1);
-      
-      programNodes.forEach((node, i) => {
-        svg.append("rect")
-          .attr("x", margin.left + portfolioWidth + chartWidth * 0.25)
-          .attr("y", margin.top + i * programHeight)
-          .attr("width", programWidth)
-          .attr("height", programHeight * 0.8)
-          .attr("fill", "#7c3aed")
-          .attr("opacity", 0.8)
-          .attr("rx", 4);
-
-        svg.append("text")
-          .attr("x", margin.left + portfolioWidth + chartWidth * 0.25 + programWidth / 2)
-          .attr("y", margin.top + i * programHeight + programHeight * 0.4)
+          .attr("y", y + portfolioHeight * 0.4)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
           .style("font-size", "11px")
           .style("fill", "white")
-          .style("font-weight", "bold")
+          .style("font-weight", "600")
+          .style("font-family", "Inter, Arial, sans-serif")
           .text(node.id);
 
+        // Budget amount with better formatting
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + chartWidth * 0.25 + programWidth / 2)
-          .attr("y", margin.top + i * programHeight + programHeight * 0.7)
+          .attr("x", margin.left + portfolioWidth / 2)
+          .attr("y", y + portfolioHeight * 0.75)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
-          .style("font-size", "9px")
-          .style("fill", "white")
+          .style("font-size", "10px")
+          .style("fill", "#e0e7ff")
+          .style("font-weight", "500")
+          .style("font-family", "Inter, Arial, sans-serif")
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Project column (right)
-      const projectWidth = chartWidth * 0.25;
-      const projectHeight = chartHeight / Math.max(projectNodes.length, 1);
+      // Program column (center) - Enhanced with better spacing
+      const programWidth = chartWidth * 0.28;
+      const programHeight = Math.min(35, chartHeight / Math.max(programNodes.length, 1));
+      const programSpacing = (chartHeight - (programNodes.length * programHeight)) / (programNodes.length + 1);
       
-      projectNodes.forEach((node, i) => {
-        svg.append("rect")
-          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.25)
-          .attr("y", margin.top + i * projectHeight)
-          .attr("width", projectWidth)
-          .attr("height", projectHeight * 0.8)
-          .attr("fill", "#22c55e")
-          .attr("opacity", 0.8)
-          .attr("rx", 4);
+      programNodes.forEach((node, i) => {
+        const y = margin.top + programSpacing + i * (programHeight + programSpacing);
+        
+        // Enhanced program rectangle with gradient
+        const programRect = svg.append("rect")
+          .attr("x", margin.left + portfolioWidth + chartWidth * 0.22)
+          .attr("y", y)
+          .attr("width", programWidth)
+          .attr("height", programHeight)
+          .attr("fill", "#7c3aed")
+          .attr("opacity", 0.9)
+          .attr("rx", 6)
+          .attr("stroke", "#5b21b6")
+          .attr("stroke-width", 1.5)
+          .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.1))");
 
+        // Program name with better typography
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.25 + projectWidth / 2)
-          .attr("y", margin.top + i * projectHeight + projectHeight * 0.4)
+          .attr("x", margin.left + portfolioWidth + chartWidth * 0.22 + programWidth / 2)
+          .attr("y", y + programHeight * 0.4)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
           .style("font-size", "10px")
           .style("fill", "white")
-          .style("font-weight", "bold")
+          .style("font-weight", "600")
+          .style("font-family", "Inter, Arial, sans-serif")
           .text(node.id);
 
+        // Budget amount with better formatting
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.25 + projectWidth / 2)
-          .attr("y", margin.top + i * projectHeight + projectHeight * 0.7)
+          .attr("x", margin.left + portfolioWidth + chartWidth * 0.22 + programWidth / 2)
+          .attr("y", y + programHeight * 0.75)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
-          .style("font-size", "8px")
-          .style("fill", "white")
+          .style("font-size", "9px")
+          .style("fill", "#ddd6fe")
+          .style("font-weight", "500")
+          .style("font-family", "Inter, Arial, sans-serif")
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Add flow arrows
+      // Project column (right) - Enhanced with better spacing
+      const projectWidth = chartWidth * 0.28;
+      const projectHeight = Math.min(30, chartHeight / Math.max(projectNodes.length, 1));
+      const projectSpacing = (chartHeight - (projectNodes.length * projectHeight)) / (projectNodes.length + 1);
+      
+      projectNodes.forEach((node, i) => {
+        const y = margin.top + projectSpacing + i * (projectHeight + projectSpacing);
+        
+        // Enhanced project rectangle with gradient
+        const projectRect = svg.append("rect")
+          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44)
+          .attr("y", y)
+          .attr("width", projectWidth)
+          .attr("height", projectHeight)
+          .attr("fill", "#22c55e")
+          .attr("opacity", 0.9)
+          .attr("rx", 4)
+          .attr("stroke", "#16a34a")
+          .attr("stroke-width", 1)
+          .attr("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.1))");
+
+        // Project name with better typography
+        svg.append("text")
+          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44 + projectWidth / 2)
+          .attr("y", y + projectHeight * 0.4)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "9px")
+          .style("fill", "white")
+          .style("font-weight", "600")
+          .style("font-family", "Inter, Arial, sans-serif")
+          .text(node.id);
+
+        // Budget amount with better formatting
+        svg.append("text")
+          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44 + projectWidth / 2)
+          .attr("y", y + projectHeight * 0.75)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "8px")
+          .style("fill", "#dcfce7")
+          .style("font-weight", "500")
+          .style("font-family", "Inter, Arial, sans-serif")
+          .text(`$${(node.value / 1000000).toFixed(1)}M`);
+      });
+
+      // Enhanced flow arrows with better styling
       sankeyData.links.forEach(link => {
         if (link.source && link.target && link.value > 0) {
-          const sourceX = margin.left + portfolioWidth + chartWidth * 0.25;
-          const sourceY = margin.top + (programNodes.findIndex(n => n.id === link.source.id) || 0) * programHeight + programHeight * 0.4;
-          const targetX = margin.left + portfolioWidth + programWidth + chartWidth * 0.25;
-          const targetY = margin.top + (projectNodes.findIndex(n => n.id === link.target.id) || 0) * projectHeight + projectHeight * 0.4;
+          const sourceX = margin.left + portfolioWidth + chartWidth * 0.22;
+          const sourceY = margin.top + programSpacing + (programNodes.findIndex(n => n.id === link.source.id) || 0) * (programHeight + programSpacing) + programHeight * 0.5;
+          const targetX = margin.left + portfolioWidth + programWidth + chartWidth * 0.44;
+          const targetY = margin.top + projectSpacing + (projectNodes.findIndex(n => n.id === link.target.id) || 0) * (projectHeight + projectSpacing) + projectHeight * 0.5;
           
-          svg.append("line")
-            .attr("x1", sourceX)
-            .attr("y1", sourceY)
-            .attr("x2", targetX)
-            .attr("y2", targetY)
+          // Create curved path for better visual appeal
+          const midX = (sourceX + targetX) / 2;
+          const path = `M ${sourceX} ${sourceY} Q ${midX} ${sourceY} ${targetX} ${targetY}`;
+          
+          svg.append("path")
+            .attr("d", path)
             .attr("stroke", "#ef4444")
-            .attr("stroke-width", Math.max(1, link.value / 1000000))
-            .attr("opacity", 0.6)
-            .attr("marker-end", "url(#arrowhead)");
+            .attr("stroke-width", Math.max(2, Math.min(8, link.value / 500000)))
+            .attr("fill", "none")
+            .attr("opacity", 0.7)
+            .attr("marker-end", "url(#arrowhead)")
+            .style("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
         }
       });
 
-      // Add arrow marker
+      // Enhanced arrow marker
       svg.append("defs").append("marker")
         .attr("id", "arrowhead")
         .attr("viewBox", "0 -5 10 10")
         .attr("refX", 8)
         .attr("refY", 0)
-        .attr("markerWidth", 6)
-        .attr("markerHeight", 6)
+        .attr("markerWidth", 8)
+        .attr("markerHeight", 8)
         .attr("orient", "auto")
         .append("path")
         .attr("d", "M0,-5L10,0L0,5")
         .attr("fill", "#ef4444");
 
-      console.log('✅ Simplified Sankey chart created successfully!');
+      // Add column headers for better clarity
+      svg.append("text")
+        .attr("x", margin.left + portfolioWidth / 2)
+        .attr("y", margin.top - 5)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "700")
+        .style("fill", "#1f2937")
+        .style("font-family", "Inter, Arial, sans-serif")
+        .text("PORTFOLIOS");
+
+      svg.append("text")
+        .attr("x", margin.left + portfolioWidth + chartWidth * 0.22 + programWidth / 2)
+        .attr("y", margin.top - 5)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "700")
+        .style("fill", "#1f2937")
+        .style("font-family", "Inter, Arial, sans-serif")
+        .text("PROGRAMS");
+
+      svg.append("text")
+        .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44 + projectWidth / 2)
+        .attr("y", margin.top - 5)
+        .attr("text-anchor", "middle")
+        .style("font-size", "14px")
+        .style("font-weight", "700")
+        .style("fill", "#1f2937")
+        .style("font-family", "Inter, Arial, sans-serif")
+        .text("PROJECTS");
+
+      console.log('✅ Enhanced Sankey chart created successfully!');
 
     } catch (error) {
       console.error('❌ Error creating Sankey chart:', error);
