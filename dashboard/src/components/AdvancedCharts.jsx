@@ -403,6 +403,175 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     return { nodes, links };
   }, [filtered]);
 
+  // Function to add highlighting functionality
+  const addHighlightingFunctionality = () => {
+    const svg = d3.select(sankeyRef.current);
+    
+    // Add click handlers to portfolio nodes
+    svg.selectAll('.portfolio-node').on('click', function() {
+      const portfolioId = d3.select(this).attr('data-id');
+      highlightConnectedElements(portfolioId, 'portfolio');
+    });
+    
+    // Add click handlers to program nodes
+    svg.selectAll('.program-node').on('click', function() {
+      const programId = d3.select(this).attr('data-id');
+      highlightConnectedElements(programId, 'program');
+    });
+    
+    // Add click handlers to project nodes
+    svg.selectAll('.project-node').on('click', function() {
+      const projectId = d3.select(this).attr('data-id');
+      highlightConnectedElements(projectId, 'project');
+    });
+    
+    // Add double-click handler to reset highlighting
+    svg.selectAll('.portfolio-node, .program-node, .project-node').on('dblclick', function() {
+      resetHighlighting();
+    });
+  };
+
+  // Function to highlight connected elements
+  const highlightConnectedElements = (selectedId, selectedType) => {
+    try {
+      const svg = d3.select(sankeyRef.current);
+      if (!svg || !selectedId || !selectedType) {
+        console.warn('Invalid parameters for highlighting:', { selectedId, selectedType });
+        return;
+      }
+    
+    // Reset all nodes to normal state
+    svg.selectAll('.portfolio-node, .program-node, .project-node')
+      .style('opacity', 0.9)
+      .style('stroke-width', function() {
+        if (d3.select(this).classed('portfolio-node')) return 2;
+        if (d3.select(this).classed('program-node')) return 1.5;
+        return 1;
+      })
+      .style('stroke', function() {
+        if (d3.select(this).classed('portfolio-node')) return '#1e40af';
+        if (d3.select(this).classed('program-node')) return '#5b21b6';
+        return '#16a34a';
+      });
+    
+    // Reset all arrows to normal state
+    svg.selectAll('.flow-arrow')
+      .style('opacity', 0.7)
+      .style('stroke-width', 3);
+    
+    // Find connected elements based on selected type
+    let connectedIds = [];
+    let connectedArrows = [];
+    
+    if (selectedType === 'portfolio') {
+      // Find programs connected to this portfolio
+      const portfolioNode = sankeyData.nodes.find(n => n.id === selectedId && n.type === 'portfolio');
+      if (portfolioNode) {
+        connectedIds = sankeyData.links
+          .filter(link => link.source.id === selectedId)
+          .map(link => link.target.id);
+        connectedArrows = sankeyData.links
+          .filter(link => link.source.id === selectedId);
+      }
+    } else if (selectedType === 'program') {
+      // Find projects connected to this program
+      const programNode = sankeyData.nodes.find(n => n.id === selectedId && n.type === 'program');
+      if (programNode) {
+        connectedIds = sankeyData.links
+          .filter(link => link.source.id === selectedId)
+          .map(link => link.target.id);
+        connectedArrows = sankeyData.links
+          .filter(link => link.source.id === selectedId);
+      }
+    } else if (selectedType === 'project') {
+      // Find programs connected to this project
+      const projectNode = sankeyData.nodes.find(n => n.id === selectedId && n.type === 'project');
+      if (projectNode) {
+        connectedIds = sankeyData.links
+          .filter(link => link.target.id === selectedId)
+          .map(link => link.source.id);
+        connectedArrows = sankeyData.links
+          .filter(link => link.target.id === selectedId);
+      }
+    }
+    
+    // Highlight selected node
+    svg.selectAll(`[data-id="${selectedId}"]`)
+      .style('opacity', 1)
+      .style('stroke-width', function() {
+        if (d3.select(this).classed('portfolio-node')) return 4;
+        if (d3.select(this).classed('program-node')) return 3;
+        return 2;
+      })
+      .style('stroke', '#ef4444');
+    
+    // Highlight connected nodes
+    connectedIds.forEach(id => {
+      svg.selectAll(`[data-id="${id}"]`)
+        .style('opacity', 1)
+        .style('stroke-width', function() {
+          if (d3.select(this).classed('portfolio-node')) return 3;
+          if (d3.select(this).classed('program-node')) return 2.5;
+          return 1.5;
+        })
+        .style('stroke', '#f59e0b');
+    });
+    
+    // Highlight connected arrows
+    connectedArrows.forEach(link => {
+      svg.selectAll(`.flow-arrow[data-source="${link.source.id}"][data-target="${link.target.id}"]`)
+        .style('opacity', 1)
+        .style('stroke', '#ef4444');
+    });
+    
+    // Dim non-connected elements
+    svg.selectAll('.portfolio-node, .program-node, .project-node').each(function() {
+      const nodeId = d3.select(this).attr('data-id');
+      if (nodeId !== selectedId && !connectedIds.includes(nodeId)) {
+        d3.select(this).style('opacity', 0.3);
+      }
+    });
+    
+    svg.selectAll('.flow-arrow').each(function() {
+      const sourceId = d3.select(this).attr('data-source');
+      const targetId = d3.select(this).attr('data-target');
+      const isConnected = connectedArrows.some(link => 
+        link.source.id === sourceId && link.target.id === targetId
+      );
+      if (!isConnected) {
+        d3.select(this).style('opacity', 0.2);
+      }
+    });
+    } catch (error) {
+      console.error('Error in highlighting function:', error);
+    }
+  };
+
+  // Function to reset highlighting to normal state
+  const resetHighlighting = () => {
+    const svg = d3.select(sankeyRef.current);
+    
+    // Reset all nodes to normal state
+    svg.selectAll('.portfolio-node, .program-node, .project-node')
+      .style('opacity', 0.9)
+      .style('stroke-width', function() {
+        if (d3.select(this).classed('portfolio-node')) return 2;
+        if (d3.select(this).classed('program-node')) return 1.5;
+        return 1;
+      })
+      .style('stroke', function() {
+        if (d3.select(this).classed('portfolio-node')) return '#1e40af';
+        if (d3.select(this).classed('program-node')) return '#5b21b6';
+        return '#16a34a';
+      });
+    
+    // Reset all arrows to normal state
+    svg.selectAll('.flow-arrow')
+      .style('opacity', 0.7)
+      .style('stroke-width', 3)
+      .style('stroke', '#ef4444');
+  };
+
   // Create Sankey diagram
   const createSankeyChart = useCallback(() => {
     console.log('=== SANKEY CHART DEBUG ===');
@@ -481,7 +650,8 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     const container = sankeyRef.current.parentElement;
     const width = container.clientWidth || 800;
     const height = container.clientHeight || 400;
-    const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+    // Optimize margins to reduce excessive white space and bring legend closer
+    const margin = { top: 40, right: 20, bottom: 40, left: 40 };
 
     console.log('📏 Container dimensions:', { width, height, container });
 
@@ -507,12 +677,12 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         projects: projectNodes.length
       });
 
-      // Create a simple flow visualization with better spacing
+      // Create a simple flow visualization with optimized spacing to reduce white space
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
       
-      // Portfolio column (left) - Enhanced with better spacing
-      const portfolioWidth = chartWidth * 0.28;
+      // Portfolio column (left) - Optimized spacing to reduce white space
+      const portfolioWidth = Math.min(120, chartWidth * 0.25);
       const portfolioHeight = Math.min(40, chartHeight / Math.max(portfolioNodes.length, 1));
       const portfolioSpacing = (chartHeight - (portfolioNodes.length * portfolioHeight)) / (portfolioNodes.length + 1);
       
@@ -530,7 +700,10 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .attr("rx", 8)
           .attr("stroke", "#1e40af")
           .attr("stroke-width", 2)
-          .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.1))");
+          .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.1))")
+          .attr("class", "portfolio-node")
+          .attr("data-id", node.id)
+          .style("cursor", "pointer");
 
         // Portfolio name with better typography
         svg.append("text")
@@ -557,8 +730,8 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Program column (center) - Enhanced with better spacing
-      const programWidth = chartWidth * 0.28;
+      // Program column (center) - Increased spacing for better visual separation
+      const programWidth = Math.min(120, chartWidth * 0.25);
       const programHeight = Math.min(35, chartHeight / Math.max(programNodes.length, 1));
       const programSpacing = (chartHeight - (programNodes.length * programHeight)) / (programNodes.length + 1);
       
@@ -567,7 +740,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         
         // Enhanced program rectangle with gradient
         const programRect = svg.append("rect")
-          .attr("x", margin.left + portfolioWidth + chartWidth * 0.22)
+          .attr("x", margin.left + portfolioWidth + 80)
           .attr("y", y)
           .attr("width", programWidth)
           .attr("height", programHeight)
@@ -576,11 +749,14 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .attr("rx", 6)
           .attr("stroke", "#5b21b6")
           .attr("stroke-width", 1.5)
-          .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.1))");
+          .attr("filter", "drop-shadow(0 2px 4px rgba(0,0,0,0.1))")
+          .attr("class", "program-node")
+          .attr("data-id", node.id)
+          .style("cursor", "pointer");
 
         // Program name with better typography
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + chartWidth * 0.22 + programWidth / 2)
+          .attr("x", margin.left + portfolioWidth + 80 + programWidth / 2)
           .attr("y", y + programHeight * 0.4)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -592,7 +768,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
         // Budget amount with better formatting
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + chartWidth * 0.22 + programWidth / 2)
+          .attr("x", margin.left + portfolioWidth + 80 + programWidth / 2)
           .attr("y", y + programHeight * 0.75)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -603,8 +779,8 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Project column (right) - Enhanced with better spacing
-      const projectWidth = chartWidth * 0.28;
+      // Project column (right) - Optimized spacing to reduce white space
+      const projectWidth = Math.min(120, chartWidth * 0.25);
       const projectHeight = Math.min(30, chartHeight / Math.max(projectNodes.length, 1));
       const projectSpacing = (chartHeight - (projectNodes.length * projectHeight)) / (projectNodes.length + 1);
       
@@ -613,7 +789,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         
         // Enhanced project rectangle with gradient
         const projectRect = svg.append("rect")
-          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44)
+          .attr("x", margin.left + portfolioWidth + programWidth + 160)
           .attr("y", y)
           .attr("width", projectWidth)
           .attr("height", projectHeight)
@@ -622,11 +798,14 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .attr("rx", 4)
           .attr("stroke", "#16a34a")
           .attr("stroke-width", 1)
-          .attr("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.1))");
+          .attr("filter", "drop-shadow(0 1px 3px rgba(0,0,0,0.1))")
+          .attr("class", "project-node")
+          .attr("data-id", node.id)
+          .style("cursor", "pointer");
 
         // Project name with better typography
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44 + projectWidth / 2)
+          .attr("x", margin.left + portfolioWidth + programWidth + 160 + projectWidth / 2)
           .attr("y", y + projectHeight * 0.4)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -638,7 +817,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
         // Budget amount with better formatting
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44 + projectWidth / 2)
+          .attr("x", margin.left + portfolioWidth + programWidth + 160 + projectWidth / 2)
           .attr("y", y + projectHeight * 0.75)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -649,26 +828,59 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Enhanced flow arrows with better styling
+      // Create arrows from portfolios to programs
       sankeyData.links.forEach(link => {
         if (link.source && link.target && link.value > 0) {
-          const sourceX = margin.left + portfolioWidth + chartWidth * 0.22;
-          const sourceY = margin.top + programSpacing + (programNodes.findIndex(n => n.id === link.source.id) || 0) * (programHeight + programSpacing) + programHeight * 0.5;
-          const targetX = margin.left + portfolioWidth + programWidth + chartWidth * 0.44;
-          const targetY = margin.top + projectSpacing + (projectNodes.findIndex(n => n.id === link.target.id) || 0) * (projectHeight + projectSpacing) + projectHeight * 0.5;
+          // Check if this is a portfolio-to-program link
+          const sourceNode = sankeyData.nodes.find(n => n.id === link.source.id);
+          const targetNode = sankeyData.nodes.find(n => n.id === link.target.id);
           
-          // Create curved path for better visual appeal
-          const midX = (sourceX + targetX) / 2;
-          const path = `M ${sourceX} ${sourceY} Q ${midX} ${sourceY} ${targetX} ${targetY}`;
-          
-          svg.append("path")
-            .attr("d", path)
-            .attr("stroke", "#ef4444")
-            .attr("stroke-width", Math.max(2, Math.min(8, link.value / 500000)))
-            .attr("fill", "none")
-            .attr("opacity", 0.7)
-            .attr("marker-end", "url(#arrowhead)")
-            .style("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+          if (sourceNode && targetNode) {
+            if (sourceNode.type === 'portfolio' && targetNode.type === 'program') {
+              // Portfolio to Program arrow
+              const sourceX = margin.left + portfolioWidth;
+              const sourceY = margin.top + portfolioSpacing + (portfolioNodes.findIndex(n => n.id === link.source.id) || 0) * (portfolioHeight + portfolioSpacing) + portfolioHeight * 0.5;
+              const targetX = margin.left + portfolioWidth + 80;
+              const targetY = margin.top + programSpacing + (programNodes.findIndex(n => n.id === link.target.id) || 0) * (programHeight + programSpacing) + programHeight * 0.5;
+              
+              const midX = (sourceX + targetX) / 2;
+              const path = `M ${sourceX} ${sourceY} Q ${midX} ${sourceY} ${targetX} ${targetY}`;
+              
+              svg.append("path")
+                .attr("d", path)
+                .attr("stroke", "#ef4444")
+                .attr("stroke-width", 3)
+                .attr("fill", "none")
+                .attr("opacity", 0.7)
+                .attr("marker-end", "url(#arrowhead)")
+                .attr("class", "flow-arrow portfolio-program-arrow")
+                .attr("data-source", link.source.id)
+                .attr("data-target", link.target.id)
+                .style("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+            }
+            else if (sourceNode.type === 'program' && targetNode.type === 'project') {
+              // Program to Project arrow
+              const sourceX = margin.left + portfolioWidth + 80 + programWidth;
+              const sourceY = margin.top + programSpacing + (programNodes.findIndex(n => n.id === link.source.id) || 0) * (programHeight + programSpacing) + programHeight * 0.5;
+              const targetX = margin.left + portfolioWidth + programWidth + 160;
+              const targetY = margin.top + projectSpacing + (projectNodes.findIndex(n => n.id === link.target.id) || 0) * (projectHeight + projectSpacing) + projectHeight * 0.5;
+              
+              const midX = (sourceX + targetX) / 2;
+              const path = `M ${sourceX} ${sourceY} Q ${midX} ${sourceY} ${targetX} ${targetY}`;
+              
+              svg.append("path")
+                .attr("d", path)
+                .attr("stroke", "#ef4444")
+                .attr("stroke-width", 3)
+                .attr("fill", "none")
+                .attr("opacity", 0.7)
+                .attr("marker-end", "url(#arrowhead)")
+                .attr("class", "flow-arrow program-project-arrow")
+                .attr("data-source", link.source.id)
+                .attr("data-target", link.target.id)
+                .style("filter", "drop-shadow(0 1px 2px rgba(0,0,0,0.1))");
+            }
+          }
         }
       });
 
@@ -685,21 +897,20 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         .attr("d", "M0,-5L10,0L0,5")
         .attr("fill", "#ef4444");
 
-      // Add column headers for better clarity
-      svg.append("text")
+      // Add column headers for better clarity with updated positioning
+        svg.append("text")
         .attr("x", margin.left + portfolioWidth / 2)
-        .attr("y", margin.top - 5)
-        .attr("text-anchor", "middle")
-        .style("font-size", "14px")
+        .attr("y", margin.top - 15)
+          .attr("text-anchor", "middle")
+          .style("font-size", "14px")
         .style("font-weight", "700")
-        .style("fill", "#1f2937")
         .style("font-family", "Inter, Arial, sans-serif")
         .text("PORTFOLIOS");
-
-      svg.append("text")
-        .attr("x", margin.left + portfolioWidth + chartWidth * 0.22 + programWidth / 2)
-        .attr("y", margin.top - 5)
-        .attr("text-anchor", "middle")
+        
+        svg.append("text")
+        .attr("x", margin.left + portfolioWidth + 80 + programWidth / 2)
+        .attr("y", margin.top - 15)
+          .attr("text-anchor", "middle")
         .style("font-size", "14px")
         .style("font-weight", "700")
         .style("fill", "#1f2937")
@@ -707,8 +918,8 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         .text("PROGRAMS");
 
       svg.append("text")
-        .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.44 + projectWidth / 2)
-        .attr("y", margin.top - 5)
+        .attr("x", margin.left + portfolioWidth + programWidth + 160 + projectWidth / 2)
+        .attr("y", margin.top - 15)
         .attr("text-anchor", "middle")
         .style("font-size", "14px")
         .style("font-weight", "700")
@@ -716,7 +927,12 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         .style("font-family", "Inter, Arial, sans-serif")
         .text("PROJECTS");
 
+
+
       console.log('✅ Enhanced Sankey chart created successfully!');
+
+      // Add click event handlers for highlighting connected elements
+      addHighlightingFunctionality();
 
     } catch (error) {
       console.error('❌ Error creating Sankey chart:', error);
@@ -732,7 +948,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         .style("fill", "#ef4444")
         .text(`Error: ${error.message}`);
     }
-  }, [sankeyData]);
+   }, [sankeyData]);
 
   // Create heatmap
   const createHeatmap = useCallback(() => {
@@ -905,14 +1121,59 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
     svg.attr("width", width).attr("height", height);
 
-    // Create zoom behavior
+    // Create zoom behavior with boundary constraints
     const zoom = d3.zoom()
       .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
-        chartGroup.attr("transform", event.transform);
+        // Constrain zoom to keep content within viewport
+        const transform = event.transform;
+        const chartWidth = width - margin.left - margin.right;
+        const chartHeight = height - margin.top - margin.bottom;
+        
+        // Calculate bounds to prevent dragging outside viewport
+        const minX = -chartWidth * (transform.k - 1);
+        const maxX = width;
+        const minY = -chartHeight * (transform.k - 1);
+        const maxY = height;
+        
+        // Constrain transform to keep content visible
+        transform.x = Math.max(minX, Math.min(maxX, transform.x));
+        transform.y = Math.max(minY, Math.min(maxY, transform.y));
+        
+        chartGroup.attr("transform", transform);
       });
 
     svg.call(zoom);
+
+    // Add reset zoom button
+    const resetButton = svg.append("g")
+      .attr("class", "reset-zoom")
+      .style("cursor", "pointer")
+      .on("click", () => {
+        svg.transition().duration(750).call(
+          zoom.transform,
+          d3.zoomIdentity.translate(width / 2, height / 2).scale(1)
+        );
+      });
+
+    resetButton.append("rect")
+      .attr("x", width - 80)
+      .attr("y", 10)
+      .attr("width", 70)
+      .attr("height", 25)
+      .attr("fill", "white")
+      .attr("stroke", "#e5e7eb")
+      .attr("stroke-width", 1)
+      .attr("rx", 4);
+
+    resetButton.append("text")
+      .attr("x", width - 45)
+      .attr("y", 25)
+      .attr("text-anchor", "middle")
+      .style("font-size", "11px")
+      .style("font-weight", "500")
+      .style("fill", "#374151")
+      .text("Reset View");
 
     // Create chart group for zooming
     const chartGroup = svg.append("g");
@@ -990,10 +1251,10 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
     // Update positions on simulation tick with boundary constraints
     simulation.on("tick", () => {
-      // Apply boundary constraints
+      // Apply boundary constraints with padding
       networkData.nodes.forEach(d => {
-        d.x = Math.max(margin.left + d.size, Math.min(width - margin.right - d.size, d.x));
-        d.y = Math.max(margin.top + d.size, Math.min(height - margin.bottom - d.size, d.y));
+        d.x = Math.max(margin.left + d.size + 10, Math.min(width - margin.right - d.size - 10, d.x));
+        d.y = Math.max(margin.top + d.size + 10, Math.min(height - margin.bottom - d.size - 10, d.y));
       });
 
       links
@@ -1019,9 +1280,9 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     }
 
     function dragged(event, d) {
-      // Constrain drag within boundaries
-      const constrainedX = Math.max(margin.left + d.size, Math.min(width - margin.right - d.size, event.x));
-      const constrainedY = Math.max(margin.top + d.size, Math.min(height - margin.bottom - d.size, event.y));
+      // Constrain drag within boundaries with tighter constraints
+      const constrainedX = Math.max(margin.left + d.size + 10, Math.min(width - margin.right - d.size - 10, event.x));
+      const constrainedY = Math.max(margin.top + d.size + 10, Math.min(height - margin.bottom - d.size - 10, event.y));
       d.fx = constrainedX;
       d.fy = constrainedY;
     }
@@ -1445,15 +1706,15 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
                         <div className="legend-section">
                           <h4 className="legend-title">Budget Summary</h4>
                           <div className="legend-item">
-                            <span className="legend-color" style="background: #2563eb; width: 16px; height: 16px; border-radius: 50%;"></span>
+                            <span className="legend-color" style={{ backgroundColor: '#2563eb', width: '16px', height: '16px', borderRadius: '50%' }}></span>
                             <span className="legend-text">Portfolios: {sankeyData.nodes.filter(n => n.type === 'portfolio').length}</span>
-                          </div>
+                  </div>
                           <div className="legend-item">
-                            <span className="legend-color" style="background: #7c3aed; width: 16px; height: 16px; border-radius: 50%;"></span>
+                            <span className="legend-color" style={{ backgroundColor: '#7c3aed', width: '16px', height: '16px', borderRadius: '50%' }}></span>
                             <span className="legend-text">Programs: {sankeyData.nodes.filter(n => n.type === 'program').length}</span>
-                          </div>
+                </div>
                           <div className="legend-item">
-                            <span className="legend-color" style="background: #22c55e; width: 16px; height: 16px; border-radius: 50%;"></span>
+                            <span className="legend-color" style={{ backgroundColor: '#22c55e', width: '16px', height: '16px', borderRadius: '50%' }}></span>
                             <span className="legend-text">Projects: {sankeyData.nodes.filter(n => n.type === 'project').length}</span>
                           </div>
                           <div className="legend-item" style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e5e7eb', fontWeight: 'bold', color: '#1f2937'}}>
@@ -1466,15 +1727,15 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
                       <div className="legend-section">
                         <h4 className="legend-title">Node Types</h4>
                         <div className="legend-item">
-                          <span className="legend-color" style="background: #2563eb; width: 16px; height: 16px; border-radius: 50%;"></span>
+                          <span className="legend-color" style={{ backgroundColor: '#2563eb', width: '16px', height: '16px', borderRadius: '50%' }}></span>
                           <span className="legend-text">Portfolio</span>
                         </div>
                         <div className="legend-item">
-                          <span className="legend-color" style="background: #7c3aed; width: 16px; height: 16px; border-radius: 50%;"></span>
+                          <span className="legend-color" style={{ backgroundColor: '#7c3aed', width: '16px', height: '16px', borderRadius: '50%' }}></span>
                           <span className="legend-text">Program</span>
                         </div>
                         <div className="legend-item">
-                          <span className="legend-color" style="background: #22c55e; width: 16px; height: 16px; border-radius: 50%;"></span>
+                          <span className="legend-color" style={{ backgroundColor: '#22c55e', width: '16px', height: '16px', borderRadius: '50%' }}></span>
                           <span className="legend-text">Project</span>
                         </div>
                       </div>
@@ -1484,8 +1745,12 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
                         <h4 className="legend-title">Budget Flow</h4>
                         <p className="legend-description">Portfolio → Program → Project</p>
                         <div className="legend-item">
-                          <span className="legend-color" style="background: #ef4444; width: 20px; height: 3px; border-radius: 2px;"></span>
-                          <span className="legend-text">Budget Flow</span>
+                          <span className="legend-color" style={{ backgroundColor: '#dc2626', width: '20px', height: '3px', borderRadius: '2px', borderTop: '2px dashed #dc2626' }}></span>
+                          <span className="legend-text">Portfolio → Program</span>
+                        </div>
+                        <div className="legend-item">
+                          <span className="legend-color" style={{ backgroundColor: '#ef4444', width: '20px', height: '3px', borderRadius: '2px' }}></span>
+                          <span className="legend-text">Program → Project</span>
                         </div>
                       </div>
                     </div>

@@ -297,7 +297,7 @@
 .chart-content {
   position: relative;
   display: flex;
-  gap: 4px;
+  gap: 2px;
   align-items: flex-start;
   min-height: 400px;
 }
@@ -307,6 +307,7 @@
   min-width: 0;
   position: relative;
   min-height: 300px; /* Reduced from 350px to 300px */
+  max-width: calc(100% - 170px); /* Ensure chart doesn't exceed available space */
 }
 
 .chart-legend {
@@ -397,6 +398,46 @@
 
 .legend-item:last-child {
   margin-bottom: 0;
+}
+
+/* Interactive highlighting styles */
+.portfolio-node:hover,
+.program-node:hover,
+.project-node:hover {
+  cursor: pointer;
+  transform: scale(1.02);
+  transition: transform 0.2s ease;
+}
+
+.portfolio-node.selected,
+.program-node.selected,
+.project-node.selected {
+  stroke: #ef4444 !important;
+  stroke-width: 4px !important;
+  filter: drop-shadow(0 4px 8px rgba(239, 68, 68, 0.3)) !important;
+}
+
+.flow-arrow.highlighted {
+  stroke: #ef4444 !important;
+  stroke-width: 6px !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 2px 4px rgba(239, 68, 68, 0.4)) !important;
+}
+
+.flow-arrow.dimmed {
+  opacity: 0.2 !important;
+  stroke: #9ca3af !important;
+}
+
+/* Portfolio to Program arrows */
+.portfolio-program-arrow {
+  stroke-dasharray: 5,5;
+  stroke: #dc2626;
+}
+
+/* Program to Project arrows */
+.program-project-arrow {
+  stroke: #ef4444;
 }
 
 .legend-color {
