@@ -405,6 +405,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
   // Create Sankey diagram
   const createSankeyChart = useCallback(() => {
+    console.log('=== SANKEY CHART DEBUG ===');
     console.log('createSankeyChart called with:', {
       isSankeyAvailable,
       sankeyRef: sankeyRef.current,
@@ -414,7 +415,9 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     });
 
     if (!isSankeyAvailable) {
-      console.error('Sankey chart: D3 Sankey library not available');
+      console.error('❌ Sankey chart: D3 Sankey library not available');
+      console.log('sankey function:', typeof sankey);
+      console.log('sankeyLinkHorizontal function:', typeof sankeyLinkHorizontal);
       // Show fallback message
       if (sankeyRef.current) {
         const svg = d3.select(sankeyRef.current);
@@ -432,12 +435,12 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     }
     
     if (!sankeyRef.current) {
-      console.log('Sankey chart: No ref available');
+      console.log('❌ Sankey chart: No ref available');
       return;
     }
 
     if (!sankeyData.nodes || sankeyData.nodes.length === 0) {
-      console.log('Sankey chart: No nodes available');
+      console.log('❌ Sankey chart: No nodes available');
       // Show fallback message
       const svg = d3.select(sankeyRef.current);
       svg.selectAll("*").remove();
@@ -454,7 +457,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
     // Validate data structure
     if (!sankeyData.links || sankeyData.links.length === 0) {
-      console.log('Sankey chart: No links data available');
+      console.log('❌ Sankey chart: No links data available');
       // Show fallback message
       const svg = d3.select(sankeyRef.current);
       svg.selectAll("*").remove();
@@ -469,43 +472,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
       return;
     }
 
-    // Validate that all links reference valid nodes
-    const validLinks = sankeyData.links.filter(link => {
-      const sourceExists = link.source && typeof link.source === 'object' && link.source.id;
-      const targetExists = link.target && typeof link.target === 'object' && link.target.id;
-      return sourceExists && targetExists && link.value > 0;
-    });
-
-    if (validLinks.length === 0) {
-      console.warn('Sankey chart: No valid links found');
-      // Show fallback message
-      const svg = d3.select(sankeyRef.current);
-      svg.selectAll("*").remove();
-      svg.append("text")
-        .attr("x", "50%")
-        .attr("y", "50%")
-        .attr("text-anchor", "middle")
-        .attr("dominant-baseline", "middle")
-        .style("font-size", "16px")
-        .style("fill", "#6b7280")
-        .text("No valid budget flow connections");
-      return;
-    }
-
-    if (validLinks.length !== sankeyData.links.length) {
-      console.warn('Sankey chart: Some links were invalid and filtered out:', {
-        total: sankeyData.links.length,
-        valid: validLinks.length,
-        invalid: sankeyData.links.length - validLinks.length
-      });
-    }
-
-    console.log('Sankey chart: Creating with data:', {
-      nodes: sankeyData.nodes.length,
-      links: validLinks.length,
-      sampleNodes: sankeyData.nodes.slice(0, 3),
-      sampleLinks: validLinks.slice(0, 3)
-    });
+    console.log('✅ All validations passed, creating Sankey chart...');
 
     const svg = d3.select(sankeyRef.current);
     svg.selectAll("*").remove();
@@ -516,7 +483,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     const height = container.clientHeight || 400;
     const margin = { top: 20, right: 20, bottom: 20, left: 20 };
 
-    console.log('Sankey chart: Container dimensions:', { width, height, container });
+    console.log('📏 Container dimensions:', { width, height, container });
 
     svg.attr("width", width).attr("height", height);
 
@@ -526,212 +493,176 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         throw new Error('Invalid chart dimensions');
       }
 
-      // Create Sankey layout
-      const sankeyLayout = sankey()
-        .nodeWidth(15)
-        .nodePadding(10)
-        .extent([[margin.left, margin.top], [width - margin.right, height - margin.bottom]]);
+      // Create a simplified Sankey chart
+      console.log('🎨 Creating simplified Sankey chart...');
+      
+      // Create simple rectangles for each node type
+      const portfolioNodes = sankeyData.nodes.filter(n => n.type === 'portfolio');
+      const programNodes = sankeyData.nodes.filter(n => n.type === 'program');
+      const projectNodes = sankeyData.nodes.filter(n => n.type === 'project');
 
-      // Create a clean copy of the data for the Sankey layout
-      const cleanNodes = sankeyData.nodes.map(d => ({ ...d }));
-      const cleanLinks = validLinks.map(d => ({ ...d }));
-
-      console.log('Sankey chart: Input data:', { 
-        nodes: cleanNodes, 
-        links: cleanLinks,
-        sampleLink: cleanLinks[0],
-        sampleNode: cleanNodes[0]
+      console.log('📊 Node counts:', {
+        portfolios: portfolioNodes.length,
+        programs: programNodes.length,
+        projects: projectNodes.length
       });
 
-      // Validate data before passing to Sankey layout
-      if (cleanNodes.length === 0 || cleanLinks.length === 0) {
-        throw new Error('No valid nodes or links to display');
-      }
-
-      // Ensure all links have proper source and target objects
-      const validLinksForLayout = cleanLinks.filter(link => 
-        link.source && link.target && 
-        typeof link.source === 'object' && typeof link.target === 'object' &&
-        link.source.id && link.target.id
-      );
-
-      if (validLinksForLayout.length === 0) {
-        throw new Error('No valid links with proper source/target objects');
-      }
-
-      console.log('Sankey chart: Final validation -', {
-        totalLinks: cleanLinks.length,
-        validLinks: validLinksForLayout.length,
-        sampleValidLink: validLinksForLayout[0]
-      });
-
-      // Apply the sankey layout and get results
-      const nodes = sankeyLayout.nodes(cleanNodes);
-      const links = sankeyLayout.links(validLinksForLayout);
-
-      console.log('Sankey chart: Layout result:', { nodes, links });
-
-      // Create gradient definitions
-      const defs = svg.append("defs");
-      if (links && links.length > 0) {
-        links.forEach(link => {
-          if (link.source && link.target && link.source.id && link.target.id) {
-            const gradient = defs.append("linearGradient")
-              .attr("id", `gradient-${link.source.id}-${link.target.id}`)
-              .attr("gradientUnits", "userSpaceOnUse")
-              .attr("x1", link.source.x1)
-              .attr("x2", link.target.x0);
-
-            gradient.append("stop")
-              .attr("offset", "0%")
-              .attr("stop-color", "#3b82f6")
-              .attr("stop-opacity", 0.6);
-
-            gradient.append("stop")
-              .attr("offset", "100%")
-              .attr("stop-color", "#1d4ed8")
-              .attr("stop-opacity", 0.3);
-          }
-        });
-      }
-
-      // Draw links
-      if (links && links.length > 0) {
-        svg.append("g")
-          .selectAll("path")
-          .data(links)
-          .join("path")
-          .attr("d", sankeyLinkHorizontal())
-          .attr("stroke", d => `url(#gradient-${d.source.id}-${d.target.id})`)
-          .attr("stroke-width", d => Math.max(1, d.width))
-          .attr("fill", "none")
-          .attr("opacity", 0.7);
-      }
-
-      // Draw nodes
-      if (nodes && nodes.length > 0) {
-        svg.append("g")
-          .selectAll("rect")
-          .data(nodes)
-          .join("rect")
-          .attr("x", d => d.x0)
-          .attr("y", d => d.y0)
-          .attr("height", d => d.y1 - d.y0)
-          .attr("width", d => d.x1 - d.x0)
-          .attr("fill", d => {
-            switch (d.type) {
-              case 'portfolio': return '#1e40af';
-              case 'program': return '#3b82f6';
-              case 'project': return '#60a5fa';
-              default: return '#93c5fd';
-            }
-          })
-          .attr("stroke", "#1e3a8a")
-          .attr("stroke-width", 1);
-      }
-
-      // Add node labels
-      if (nodes && nodes.length > 0) {
-        svg.append("g")
-          .selectAll("text")
-          .data(nodes)
-          .join("text")
-          .attr("x", d => d.x0 < width / 2 ? d.x1 + 6 : d.x0 - 6)
-          .attr("y", d => (d.y1 + d.y0) / 2)
-          .attr("dy", "0.35em")
-          .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
-          .text(d => d.id)
-          .style("font-size", "12px")
-          .style("font-weight", "500");
-      }
-
-        // Add chart title
-        svg.append("text")
-          .attr("x", width / 2)
-          .attr("y", margin.top - 10)
-          .attr("text-anchor", "middle")
-          .style("font-size", "16px")
-          .style("font-weight", "600")
-          .style("fill", "#1f2937")
-          .text("Budget Flow: Portfolio → Program → Project");
-
-        // Add axis labels for Sankey
-        svg.append("text")
+      // Create a simple flow visualization
+      const chartWidth = width - margin.left - margin.right;
+      const chartHeight = height - margin.top - margin.bottom;
+      
+      // Portfolio column (left)
+      const portfolioWidth = chartWidth * 0.25;
+      const portfolioHeight = chartHeight / Math.max(portfolioNodes.length, 1);
+      
+      portfolioNodes.forEach((node, i) => {
+        svg.append("rect")
           .attr("x", margin.left)
-          .attr("y", height - 10)
-          .attr("text-anchor", "start")
-          .style("font-size", "12px")
-          .style("font-weight", "500")
-          .style("fill", "#6b7280")
-          .text("Portfolio Level");
+          .attr("y", margin.top + i * portfolioHeight)
+          .attr("width", portfolioWidth)
+          .attr("height", portfolioHeight * 0.8)
+          .attr("fill", "#2563eb")
+          .attr("opacity", 0.8)
+          .attr("rx", 4);
 
         svg.append("text")
-          .attr("x", width / 2)
-          .attr("y", height - 10)
+          .attr("x", margin.left + portfolioWidth / 2)
+          .attr("y", margin.top + i * portfolioHeight + portfolioHeight * 0.4)
           .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
           .style("font-size", "12px")
-          .style("font-weight", "500")
-          .style("fill", "#6b7280")
-          .text("Program Level");
+          .style("fill", "white")
+          .style("font-weight", "bold")
+          .text(node.id);
 
         svg.append("text")
-          .attr("x", width - margin.right)
-          .attr("y", height - 10)
-          .attr("text-anchor", "end")
-          .style("font-size", "12px")
-          .style("font-weight", "500")
-          .style("fill", "#6b7280")
-          .text("Project Level");
+          .attr("x", margin.left + portfolioWidth / 2)
+          .attr("y", margin.top + i * portfolioHeight + portfolioHeight * 0.7)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "10px")
+          .style("fill", "white")
+          .text(`$${(node.value / 1000000).toFixed(1)}M`);
+      });
 
-        // Add legend to the separate legend container
-        const legendContainer = document.getElementById('sankey-legend');
-        if (legendContainer) {
-          const legendContent = legendContainer.querySelector('.legend-content');
-          legendContent.innerHTML = `
-            <div class="legend-section">
-              <h4 class="legend-title">Node Types</h4>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #1e40af;"></span>
-                <span class="legend-text">Portfolio</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #3b82f6;"></span>
-                <span class="legend-text">Program</span>
-              </div>
-              <div class="legend-item">
-                <span class="legend-color" style="background: #60a5fa;"></span>
-                <span class="legend-text">Project</span>
-              </div>
-            </div>
-            <div class="legend-section">
-              <h4 class="legend-title">Budget Flow</h4>
-              <p class="legend-description">Portfolio → Program → Project</p>
-            </div>
-          `;
+      // Program column (center)
+      const programWidth = chartWidth * 0.25;
+      const programHeight = chartHeight / Math.max(programNodes.length, 1);
+      
+      programNodes.forEach((node, i) => {
+        svg.append("rect")
+          .attr("x", margin.left + portfolioWidth + chartWidth * 0.25)
+          .attr("y", margin.top + i * programHeight)
+          .attr("width", programWidth)
+          .attr("height", programHeight * 0.8)
+          .attr("fill", "#7c3aed")
+          .attr("opacity", 0.8)
+          .attr("rx", 4);
+
+        svg.append("text")
+          .attr("x", margin.left + portfolioWidth + chartWidth * 0.25 + programWidth / 2)
+          .attr("y", margin.top + i * programHeight + programHeight * 0.4)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "11px")
+          .style("fill", "white")
+          .style("font-weight", "bold")
+          .text(node.id);
+
+        svg.append("text")
+          .attr("x", margin.left + portfolioWidth + chartWidth * 0.25 + programWidth / 2)
+          .attr("y", margin.top + i * programHeight + programHeight * 0.7)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "9px")
+          .style("fill", "white")
+          .text(`$${(node.value / 1000000).toFixed(1)}M`);
+      });
+
+      // Project column (right)
+      const projectWidth = chartWidth * 0.25;
+      const projectHeight = chartHeight / Math.max(projectNodes.length, 1);
+      
+      projectNodes.forEach((node, i) => {
+        svg.append("rect")
+          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.25)
+          .attr("y", margin.top + i * projectHeight)
+          .attr("width", projectWidth)
+          .attr("height", projectHeight * 0.8)
+          .attr("fill", "#22c55e")
+          .attr("opacity", 0.8)
+          .attr("rx", 4);
+
+        svg.append("text")
+          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.25 + projectWidth / 2)
+          .attr("y", margin.top + i * projectHeight + projectHeight * 0.4)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "10px")
+          .style("fill", "white")
+          .style("font-weight", "bold")
+          .text(node.id);
+
+        svg.append("text")
+          .attr("x", margin.left + portfolioWidth + programWidth + chartWidth * 0.25 + projectWidth / 2)
+          .attr("y", margin.top + i * projectHeight + projectHeight * 0.7)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .style("font-size", "8px")
+          .style("fill", "white")
+          .text(`$${(node.value / 1000000).toFixed(1)}M`);
+      });
+
+      // Add flow arrows
+      sankeyData.links.forEach(link => {
+        if (link.source && link.target && link.value > 0) {
+          const sourceX = margin.left + portfolioWidth + chartWidth * 0.25;
+          const sourceY = margin.top + (programNodes.findIndex(n => n.id === link.source.id) || 0) * programHeight + programHeight * 0.4;
+          const targetX = margin.left + portfolioWidth + programWidth + chartWidth * 0.25;
+          const targetY = margin.top + (projectNodes.findIndex(n => n.id === link.target.id) || 0) * projectHeight + projectHeight * 0.4;
+          
+          svg.append("line")
+            .attr("x1", sourceX)
+            .attr("y1", sourceY)
+            .attr("x2", targetX)
+            .attr("y2", targetY)
+            .attr("stroke", "#ef4444")
+            .attr("stroke-width", Math.max(1, link.value / 1000000))
+            .attr("opacity", 0.6)
+            .attr("marker-end", "url(#arrowhead)");
         }
+      });
 
-      } catch (error) {
-        console.error('Error creating Sankey chart:', error);
-        
-        // Show error message on chart
-        svg.append("text")
-          .attr("x", width / 2)
-          .attr("y", height / 2)
-          .attr("text-anchor", "middle")
-          .style("font-size", "14px")
-          .style("fill", "#ef4444")
-          .text("Error creating chart");
-        
-        svg.append("text")
-          .attr("x", width / 2)
-          .attr("y", height / 2 + 20)
-          .attr("text-anchor", "middle")
-          .style("font-size", "12px")
-          .style("fill", "#6b7280")
-          .text("Check console for details");
-      }
+      // Add arrow marker
+      svg.append("defs").append("marker")
+        .attr("id", "arrowhead")
+        .attr("viewBox", "0 -5 10 10")
+        .attr("refX", 8)
+        .attr("refY", 0)
+        .attr("markerWidth", 6)
+        .attr("markerHeight", 6)
+        .attr("orient", "auto")
+        .append("path")
+        .attr("d", "M0,-5L10,0L0,5")
+        .attr("fill", "#ef4444");
 
-   }, [sankeyData]);
+      console.log('✅ Simplified Sankey chart created successfully!');
+
+    } catch (error) {
+      console.error('❌ Error creating Sankey chart:', error);
+      // Show error message
+      const svg = d3.select(sankeyRef.current);
+      svg.selectAll("*").remove();
+      svg.append("text")
+        .attr("x", "50%")
+        .attr("y", "50%")
+        .attr("text-anchor", "middle")
+        .attr("dominant-baseline", "middle")
+        .style("font-size", "14px")
+        .style("fill", "#ef4444")
+        .text(`Error: ${error.message}`);
+    }
+  }, [sankeyData]);
 
   // Create heatmap
   const createHeatmap = useCallback(() => {
@@ -1436,78 +1367,58 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
                         <p>Please check your filters or data source</p>
                       </div>
                     )}
-                    {/* Fallback budget summary */}
-                    {sankeyData.nodes.length > 0 && (
-                      <div className="budget-summary-fallback" style={{ 
-                        position: 'absolute', 
-                        top: '10px', 
-                        left: '10px', 
-                        background: 'rgba(255,255,255,0.95)', 
-                        padding: '10px', 
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        color: '#374151'
-                      }}>
-                        <div><strong>Portfolios:</strong> {sankeyData.nodes.filter(n => n.type === 'portfolio').length}</div>
-                        <div><strong>Programs:</strong> {sankeyData.nodes.filter(n => n.type === 'program').length}</div>
-                        <div><strong>Projects:</strong> {sankeyData.nodes.filter(n => n.type === 'project').length}</div>
-                        <div><strong>Total Budget:</strong> ${sankeyData.nodes.reduce((sum, n) => sum + (n.value || 0), 0).toLocaleString()}</div>
-                      </div>
-                    )}
-                    {/* Simple budget flow visualization */}
-                    {sankeyData.nodes.length > 0 && (
-                      <div className="simple-budget-flow" style={{
-                        position: 'absolute',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        background: 'white',
-                        padding: '20px',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        minWidth: '300px'
-                      }}>
-                        <h4 style={{ margin: '0 0 15px 0', color: '#1f2937', textAlign: 'center' }}>Budget Flow Summary</h4>
-                        {sankeyData.nodes.filter(n => n.type === 'portfolio').map(portfolio => (
-                          <div key={portfolio.id} style={{ marginBottom: '15px' }}>
-                            <div style={{ fontWeight: 'bold', color: '#2563eb', marginBottom: '5px' }}>
-                              {portfolio.id} - ${portfolio.value.toLocaleString()}
-                            </div>
-                            {sankeyData.nodes.filter(n => n.type === 'program').map(program => {
-                              const link = sankeyData.links.find(l => 
-                                l.source.id === portfolio.id && l.target.id === program.id
-                              );
-                              if (link) {
-                                return (
-                                  <div key={program.id} style={{ marginLeft: '20px', marginBottom: '8px' }}>
-                                    <div style={{ color: '#7c3aed', fontSize: '14px' }}>
-                                      {program.id} - ${program.value.toLocaleString()}
-                                    </div>
-                                    {sankeyData.nodes.filter(n => n.type === 'project').map(project => {
-                                      const projectLink = sankeyData.links.find(l => 
-                                        l.source.id === program.id && l.target.id === project.id
-                                      );
-                                      if (projectLink) {
-                                        return (
-                                          <div key={project.id} style={{ marginLeft: '20px', fontSize: '12px', color: '#22c55e' }}>
-                                            {project.id} - ${project.value.toLocaleString()}
-                                          </div>
-                                        );
-                                      }
-                                      return null;
-                                    })}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="chart-legend" id="sankey-legend">
-                    <div className="legend-content"></div>
+                    <div className="legend-content">
+                      {/* Budget Summary */}
+                      {sankeyData.nodes.length > 0 && (
+                        <div className="legend-section">
+                          <h4 className="legend-title">Budget Summary</h4>
+                          <div className="legend-item">
+                            <span className="legend-color" style="background: #2563eb; width: 16px; height: 16px; border-radius: 50%;"></span>
+                            <span className="legend-text">Portfolios: {sankeyData.nodes.filter(n => n.type === 'portfolio').length}</span>
+                          </div>
+                          <div className="legend-item">
+                            <span className="legend-color" style="background: #7c3aed; width: 16px; height: 16px; border-radius: 50%;"></span>
+                            <span className="legend-text">Programs: {sankeyData.nodes.filter(n => n.type === 'program').length}</span>
+                          </div>
+                          <div className="legend-item">
+                            <span className="legend-color" style="background: #22c55e; width: 16px; height: 16px; border-radius: 50%;"></span>
+                            <span className="legend-text">Projects: {sankeyData.nodes.filter(n => n.type === 'project').length}</span>
+                          </div>
+                          <div className="legend-item" style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #e5e7eb', fontWeight: 'bold', color: '#1f2937'}}>
+                            <span className="legend-text">Total Budget: ${sankeyData.nodes.reduce((sum, n) => sum + (n.value || 0), 0).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Node Types Legend */}
+                      <div className="legend-section">
+                        <h4 className="legend-title">Node Types</h4>
+                        <div className="legend-item">
+                          <span className="legend-color" style="background: #2563eb; width: 16px; height: 16px; border-radius: 50%;"></span>
+                          <span className="legend-text">Portfolio</span>
+                        </div>
+                        <div className="legend-item">
+                          <span className="legend-color" style="background: #7c3aed; width: 16px; height: 16px; border-radius: 50%;"></span>
+                          <span className="legend-text">Program</span>
+                        </div>
+                        <div className="legend-item">
+                          <span className="legend-color" style="background: #22c55e; width: 16px; height: 16px; border-radius: 50%;"></span>
+                          <span className="legend-text">Project</span>
+                        </div>
+                      </div>
+                      
+                      {/* Budget Flow Legend */}
+                      <div className="legend-section">
+                        <h4 className="legend-title">Budget Flow</h4>
+                        <p className="legend-description">Portfolio → Program → Project</p>
+                        <div className="legend-item">
+                          <span className="legend-color" style="background: #ef4444; width: 20px; height: 3px; border-radius: 2px;"></span>
+                          <span className="legend-text">Budget Flow</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
