@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useMemo, useCallback, useState } from 'react'
 import * as d3 from 'd3';
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
 import ExportDropdown from './ExportDropdown';
+import AISidePanel from './AISidePanel';
 import './AdvancedCharts.css';
 
 // Check if D3 Sankey is available
@@ -94,6 +95,9 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
   const heatmapRef = useRef(null);
   const networkRef = useRef(null);
   const chart3dRef = useRef(null);
+
+  // AI Assistant state
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
 
 
@@ -681,10 +685,10 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
       const chartWidth = width - margin.left - margin.right;
       const chartHeight = height - margin.top - margin.bottom;
       
-      // Portfolio column (left) - Optimized spacing to reduce white space
+      // Portfolio column (left) - Dynamic spacing to fit container
       const portfolioWidth = Math.min(120, chartWidth * 0.25);
       const portfolioHeight = Math.min(40, chartHeight / Math.max(portfolioNodes.length, 1));
-      const portfolioSpacing = (chartHeight - (portfolioNodes.length * portfolioHeight)) / (portfolioNodes.length + 1);
+      const portfolioSpacing = Math.max(15, (chartHeight - (portfolioNodes.length * portfolioHeight)) / (portfolioNodes.length + 1));
       
       portfolioNodes.forEach((node, i) => {
         const y = margin.top + portfolioSpacing + i * (portfolioHeight + portfolioSpacing);
@@ -730,17 +734,17 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Program column (center) - Increased spacing for better visual separation
+      // Program column (center) - Dynamic spacing to fit container
       const programWidth = Math.min(120, chartWidth * 0.25);
       const programHeight = Math.min(35, chartHeight / Math.max(programNodes.length, 1));
-      const programSpacing = (chartHeight - (programNodes.length * programHeight)) / (programNodes.length + 1);
+      const programSpacing = Math.max(12, (chartHeight - (programNodes.length * programHeight)) / (programNodes.length + 1));
       
       programNodes.forEach((node, i) => {
         const y = margin.top + programSpacing + i * (programHeight + programSpacing);
         
         // Enhanced program rectangle with gradient
         const programRect = svg.append("rect")
-          .attr("x", margin.left + portfolioWidth + 80)
+          .attr("x", margin.left + portfolioWidth + 60)
           .attr("y", y)
           .attr("width", programWidth)
           .attr("height", programHeight)
@@ -756,7 +760,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
         // Program name with better typography
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + 80 + programWidth / 2)
+          .attr("x", margin.left + portfolioWidth + 60 + programWidth / 2)
           .attr("y", y + programHeight * 0.4)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -768,7 +772,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
         // Budget amount with better formatting
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + 80 + programWidth / 2)
+          .attr("x", margin.left + portfolioWidth + 60 + programWidth / 2)
           .attr("y", y + programHeight * 0.75)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -779,17 +783,17 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
           .text(`$${(node.value / 1000000).toFixed(1)}M`);
       });
 
-      // Project column (right) - Optimized spacing to reduce white space
+      // Project column (right) - Dynamic spacing to fit container
       const projectWidth = Math.min(120, chartWidth * 0.25);
       const projectHeight = Math.min(30, chartHeight / Math.max(projectNodes.length, 1));
-      const projectSpacing = (chartHeight - (projectNodes.length * projectHeight)) / (projectNodes.length + 1);
+      const projectSpacing = Math.max(8, (chartHeight - (projectNodes.length * projectHeight)) / (projectNodes.length + 1));
       
       projectNodes.forEach((node, i) => {
         const y = margin.top + projectSpacing + i * (projectHeight + projectSpacing);
         
         // Enhanced project rectangle with gradient
         const projectRect = svg.append("rect")
-          .attr("x", margin.left + portfolioWidth + programWidth + 160)
+          .attr("x", margin.left + portfolioWidth + programWidth + 120)
           .attr("y", y)
           .attr("width", projectWidth)
           .attr("height", projectHeight)
@@ -805,7 +809,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
         // Project name with better typography
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + programWidth + 160 + projectWidth / 2)
+          .attr("x", margin.left + portfolioWidth + programWidth + 120 + projectWidth / 2)
           .attr("y", y + projectHeight * 0.4)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -817,7 +821,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
 
         // Budget amount with better formatting
         svg.append("text")
-          .attr("x", margin.left + portfolioWidth + programWidth + 160 + projectWidth / 2)
+          .attr("x", margin.left + portfolioWidth + programWidth + 120 + projectWidth / 2)
           .attr("y", y + projectHeight * 0.75)
           .attr("text-anchor", "middle")
           .attr("dominant-baseline", "middle")
@@ -840,7 +844,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
               // Portfolio to Program arrow
               const sourceX = margin.left + portfolioWidth;
               const sourceY = margin.top + portfolioSpacing + (portfolioNodes.findIndex(n => n.id === link.source.id) || 0) * (portfolioHeight + portfolioSpacing) + portfolioHeight * 0.5;
-              const targetX = margin.left + portfolioWidth + 80;
+              const targetX = margin.left + portfolioWidth + 60;
               const targetY = margin.top + programSpacing + (programNodes.findIndex(n => n.id === link.target.id) || 0) * (programHeight + programSpacing) + programHeight * 0.5;
               
               const midX = (sourceX + targetX) / 2;
@@ -860,9 +864,9 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
             }
             else if (sourceNode.type === 'program' && targetNode.type === 'project') {
               // Program to Project arrow
-              const sourceX = margin.left + portfolioWidth + 80 + programWidth;
+              const sourceX = margin.left + portfolioWidth + 60 + programWidth;
               const sourceY = margin.top + programSpacing + (programNodes.findIndex(n => n.id === link.source.id) || 0) * (programHeight + programSpacing) + programHeight * 0.5;
-              const targetX = margin.left + portfolioWidth + programWidth + 160;
+              const targetX = margin.left + portfolioWidth + programWidth + 120;
               const targetY = margin.top + projectSpacing + (projectNodes.findIndex(n => n.id === link.target.id) || 0) * (projectHeight + projectSpacing) + projectHeight * 0.5;
               
               const midX = (sourceX + targetX) / 2;
@@ -908,7 +912,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         .text("PORTFOLIOS");
         
         svg.append("text")
-        .attr("x", margin.left + portfolioWidth + 80 + programWidth / 2)
+        .attr("x", margin.left + portfolioWidth + 60 + programWidth / 2)
         .attr("y", margin.top - 15)
           .attr("text-anchor", "middle")
         .style("font-size", "14px")
@@ -917,8 +921,8 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
         .style("font-family", "Inter, Arial, sans-serif")
         .text("PROGRAMS");
 
-      svg.append("text")
-        .attr("x", margin.left + portfolioWidth + programWidth + 160 + projectWidth / 2)
+              svg.append("text")
+        .attr("x", margin.left + portfolioWidth + programWidth + 120 + projectWidth / 2)
         .attr("y", margin.top - 15)
         .attr("text-anchor", "middle")
         .style("font-size", "14px")
@@ -1620,9 +1624,31 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
   const isLoading = !filtered || filtered.length === 0;
 
     return (
-    <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
-      <div className="dashboard-container">
+    <>
+      {/* AI Side Panel */}
+      <AISidePanel
+        isOpen={isAIPanelOpen}
+        onClose={() => setIsAIPanelOpen(false)}
+        projects={displayProjects}
+        selectedPortfolio={effectivePortfolio}
+        selectedStatuses={effectiveStatuses}
+      />
+      
+      <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
+        <div className="dashboard-container">
 
+
+        {/* AI Assistant Toggle - Right Side */}
+        <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
+          <button
+            className="ai-assistant-toggle-btn"
+            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            aria-label={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+            title={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+          >
+            <span className="ai-assistant-icon">🤖</span>
+          </button>
+        </div>
 
         {/* Filters for standalone use */}
         {(!projects || projects.length === 0) && (
@@ -1823,11 +1849,14 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
                   </div>
                 </div>
               </div>
+
+
             </div>
           </div>
         )}
       </div>
     </div>
+    </>
   );
 };
 

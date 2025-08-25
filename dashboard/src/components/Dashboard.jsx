@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { loadCSV } from '../dataLoader';
 import PortfolioFilter from './PortfolioFilter';
 import ExportDropdown from './ExportDropdown';
+import AISidePanel from './AISidePanel';
 
 import './Dashboard.css';
 
@@ -269,7 +270,7 @@ function StatusFilter({ statuses, selectedStatuses, onStatusChange }) {
   );
 }
 
-export default function Dashboard({ sidebarCollapsed }) {
+export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPanelOpen }) {
   const [projects, setProjects] = useState([]);
   const [selectedPortfolio, setSelectedPortfolio] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState([]);
@@ -434,8 +435,18 @@ export default function Dashboard({ sidebarCollapsed }) {
   };
 
   return (
-          <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
-      <div className="dashboard-container">
+    <>
+      {/* AI Side Panel */}
+      <AISidePanel
+        isOpen={isAIPanelOpen}
+        onClose={() => setIsAIPanelOpen(false)}
+        projects={projects}
+        selectedPortfolio={selectedPortfolio}
+        selectedStatuses={selectedStatuses}
+      />
+      
+      <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
+        <div className="dashboard-container">
 
         
         <div className="dashboard-title">
@@ -449,6 +460,18 @@ export default function Dashboard({ sidebarCollapsed }) {
               filename="Complete_Portfolio_Dashboard"
             />
           </div>
+        </div>
+        
+        {/* AI Assistant Toggle - Right Side */}
+        <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
+          <button
+            className="ai-assistant-toggle-btn"
+            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            aria-label={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+            title={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+          >
+            <span className="ai-assistant-icon">🤖</span>
+          </button>
         </div>
         
         <div className="filters-section">
@@ -631,5 +654,6 @@ export default function Dashboard({ sidebarCollapsed }) {
         </div>
       </div>
     </div>
+    </>
   );
 } 

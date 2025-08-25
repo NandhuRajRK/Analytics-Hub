@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { loadCSV } from '../dataLoader';
 import PortfolioFilter from './PortfolioFilter';
 import ExportDropdown from './ExportDropdown';
+import AISidePanel from './AISidePanel';
 import './BudgetFinance.css';
 
 // Budget Status Filter component
@@ -184,6 +185,9 @@ export default function BudgetFinance({ sidebarCollapsed }) {
    const [drillDownData, setDrillDownData] = useState(null);
    const [drillDownHistory, setDrillDownHistory] = useState([]);
    const [selectedDrillItem, setSelectedDrillItem] = useState(null);
+   
+   // AI Assistant state
+   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
 
 
@@ -1064,8 +1068,18 @@ export default function BudgetFinance({ sidebarCollapsed }) {
     }, [filtered, financialMetrics, createMilestoneChart, createTimelineChart]);
 
   return (
-    <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
-      <div className="dashboard-container">
+    <>
+      {/* AI Side Panel */}
+      <AISidePanel
+        isOpen={isAIPanelOpen}
+        onClose={() => setIsAIPanelOpen(false)}
+        projects={projects}
+        selectedPortfolio={selectedPortfolio}
+        selectedStatuses={selectedBudgetStatuses}
+      />
+      
+      <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
+        <div className="dashboard-container">
         
                  <div className="dashboard-title">
                    <div className="title-content">
@@ -1078,6 +1092,19 @@ export default function BudgetFinance({ sidebarCollapsed }) {
                        filename="Complete_Budget_Finance_Dashboard"
                      />
                    </div>
+                 </div>
+                 
+                 {/* AI Assistant Toggle - Right Side */}
+                 <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
+                   <button
+                     className="ai-assistant-toggle-btn"
+                     onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+                     aria-label={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+                     title={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+                   >
+                     <span className="ai-assistant-icon">🤖</span>
+
+                   </button>
                  </div>
 
          {/* Drill-down Navigation - Only show when not at portfolio level */}
@@ -1725,5 +1752,6 @@ export default function BudgetFinance({ sidebarCollapsed }) {
          </div>
       </div>
     </div>
+    </>
   );
 }

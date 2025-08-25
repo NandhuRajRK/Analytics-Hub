@@ -76,6 +76,8 @@ export default function SidebarMenu({ collapsed, setCollapsed }) {
         <NavLink to="/advanced-charts" className={({ isActive }) => 'sidebar-link' + (isActive ? ' active' : '')} aria-label="Advanced Charts">
           Advanced Charts
         </NavLink>
-    </nav>
-  );
-} 
+        
+
+      </nav>
+    );
+  } 

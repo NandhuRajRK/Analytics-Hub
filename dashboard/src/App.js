@@ -10,6 +10,7 @@ import './components/Dashboard.css';
 
 function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
   // Sidebar auto-collapse logic for mobile
   useEffect(() => {
@@ -28,10 +29,19 @@ function App() {
   return (
     <Router>
       <div style={{ display: 'flex' }}>
-        <SidebarMenu collapsed={sidebarCollapsed} setCollapsed={setSidebarCollapsed} />
+        <SidebarMenu 
+          collapsed={sidebarCollapsed} 
+          setCollapsed={setSidebarCollapsed} 
+        />
         <div className="app-main-content" style={{ flex: 1 }}>
           <Routes>
-            <Route path="/" element={<Dashboard sidebarCollapsed={sidebarCollapsed} />} />
+            <Route path="/" element={
+              <Dashboard 
+                sidebarCollapsed={sidebarCollapsed} 
+                isAIPanelOpen={isAIPanelOpen}
+                setIsAIPanelOpen={setIsAIPanelOpen}
+              />
+            } />
             <Route path="/departments" element={<DepartmentDashboard sidebarCollapsed={sidebarCollapsed} />} />
             <Route path="/dependencies" element={<DependencyGraph sidebarCollapsed={sidebarCollapsed} />} />
             <Route path="/budget" element={<BudgetFinance sidebarCollapsed={sidebarCollapsed} />} />

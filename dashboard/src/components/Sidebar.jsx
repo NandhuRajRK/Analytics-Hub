@@ -10,7 +10,7 @@ import {
   LogoutIcon,
 } from "../assets/icons";
 
-const Sidebar = () => {
+const Sidebar = ({ onOpenAIAssistant }) => {
   const {
     sidebarCollapsed,
     setSidebarCollapsed,
@@ -27,6 +27,13 @@ const Sidebar = () => {
     { path: "/settings", icon: SettingsIcon, label: "Settings", ariaLabel: "Go to settings" },
     { path: "/logout", icon: LogoutIcon, label: "Logout", ariaLabel: "Logout" },
   ];
+
+  // AI Assistant toggle function
+  const handleAIAssistantClick = () => {
+    if (onOpenAIAssistant) {
+      onOpenAIAssistant();
+    }
+  };
 
   const handleNavItemClick = (path) => {
     if (path === "/logout") {
@@ -97,6 +104,20 @@ const Sidebar = () => {
             </li>
           ))}
         </ul>
+        
+        {/* AI Assistant Section */}
+        <div className="sidebar-ai-section">
+          <span className="sidebar-title">AI Assistant</span>
+          <button
+            className="ai-assistant-btn"
+            onClick={handleAIAssistantClick}
+            aria-label="Open AI Assistant"
+            title="AI Assistant"
+          >
+            <span className="ai-assistant-icon">🤖</span>
+            <span>AI Assistant</span>
+          </button>
+        </div>
       </nav>
 
       <div className="sidebar-footer">

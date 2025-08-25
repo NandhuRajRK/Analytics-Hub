@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { loadCSV } from '../dataLoader';
 import ExportDropdown from './ExportDropdown';
+import AISidePanel from './AISidePanel';
 import './Dashboard.css';
 
 function getStatusColor(status) {
@@ -232,6 +233,9 @@ export default function DepartmentDashboard({ sidebarCollapsed }) {
   const [bpmId, setBpmId] = useState('');
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [timelineFormat, setTimelineFormat] = useState('months');
+  
+  // AI Assistant state
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
   useEffect(() => {
     loadCSV(process.env.PUBLIC_URL + '/data/demo.csv', setProjects);
@@ -283,8 +287,18 @@ export default function DepartmentDashboard({ sidebarCollapsed }) {
   const timelineLabels = generateTimelineLabels(minDate, maxDate, timelineFormat);
 
   return (
-          <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
-      <div className="dashboard-container">
+    <>
+      {/* AI Side Panel */}
+      <AISidePanel
+        isOpen={isAIPanelOpen}
+        onClose={() => setIsAIPanelOpen(false)}
+        projects={projects}
+        selectedPortfolio={department}
+        selectedStatuses={selectedStatuses}
+      />
+      
+      <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
+        <div className="dashboard-container">
 
         
         <div className="dashboard-title">
@@ -298,6 +312,18 @@ export default function DepartmentDashboard({ sidebarCollapsed }) {
               filename="Complete_Department_Dashboard"
             />
           </div>
+        </div>
+        
+        {/* AI Assistant Toggle - Right Side */}
+        <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
+          <button
+            className="ai-assistant-toggle-btn"
+            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            aria-label={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+            title={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+          >
+            <span className="ai-assistant-icon">🤖</span>
+          </button>
         </div>
         
         <div className="filters-section">
@@ -486,5 +512,6 @@ export default function DepartmentDashboard({ sidebarCollapsed }) {
         </div>
       </div>
     </div>
+    </>
   );
 } 

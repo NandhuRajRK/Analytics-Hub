@@ -3,6 +3,7 @@ import * as d3 from 'd3';
 import { loadCSV } from '../dataLoader';
 import PortfolioFilter from './PortfolioFilter';
 import ExportDropdown from './ExportDropdown';
+import AISidePanel from './AISidePanel';
 import './DependencyGraph.css';
 
 // Simple StatusFilter component for dependency graph
@@ -97,6 +98,9 @@ export default function DependencyGraph({ sidebarCollapsed }) {
   const [insights, setInsights] = useState([]);
   const [criticalPaths, setCriticalPaths] = useState([]);
   const [riskMetrics, setRiskMetrics] = useState({});
+  
+  // AI Assistant state
+  const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
 
 
@@ -548,8 +552,18 @@ export default function DependencyGraph({ sidebarCollapsed }) {
   }, []);
 
   return (
-    <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
-      <div className="dashboard-container">
+    <>
+      {/* AI Side Panel */}
+      <AISidePanel
+        isOpen={isAIPanelOpen}
+        onClose={() => setIsAIPanelOpen(false)}
+        projects={projects}
+        selectedPortfolio={selectedPortfolio}
+        selectedStatuses={selectedStatuses}
+      />
+      
+      <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
+        <div className="dashboard-container">
         
         <div className="dashboard-title">
           <div className="title-content">
@@ -562,6 +576,18 @@ export default function DependencyGraph({ sidebarCollapsed }) {
                filename="Complete_Dependency_Graph_Dashboard"
              />
           </div>
+        </div>
+        
+        {/* AI Assistant Toggle - Right Side */}
+        <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
+          <button
+            className="ai-assistant-toggle-btn"
+            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            aria-label={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+            title={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
+          >
+            <span className="ai-assistant-icon">🤖</span>
+          </button>
         </div>
         
         <div className="filters-section">
@@ -690,5 +716,6 @@ export default function DependencyGraph({ sidebarCollapsed }) {
         )}
       </div>
     </div>
+    </>
   );
 }
