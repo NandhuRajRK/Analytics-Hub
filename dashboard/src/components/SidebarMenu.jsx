@@ -56,7 +56,7 @@ export default function SidebarMenu({ collapsed, setCollapsed }) {
   return (
     <nav className={`sidebar-menu${collapsed ? ' collapsed' : ''}`}>
       <div className="sidebar-title-row">
-        <div className="sidebar-title">Dashboards</div>
+        <div className="sidebar-title">R&D Analytics Hub</div>
         <button className="sidebar-collapse-btn" onClick={() => setCollapsed(true)} title="Collapse" aria-label="Collapse sidebar">
           <DrawerArrow collapsed={false} />
         </button>

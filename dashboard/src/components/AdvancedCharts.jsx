@@ -218,7 +218,7 @@ const AdvancedCharts = ({ projects, selectedPortfolio, selectedStatuses, sidebar
     });
 
     // Create project nodes
-    const projectCount = 0;
+    let projectCount = 0;
     filtered.forEach(project => {
       if (project.Project) {
         const node = { id: project.Project, type: 'project', value: parseFloat(project.Budget || 0) };
