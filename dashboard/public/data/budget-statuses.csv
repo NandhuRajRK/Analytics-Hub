@@ -1,0 +1,5 @@
+Status,Description,Color,Priority
+Under Budget,Project spending is below allocated budget,#22c55e,Low
+On Budget,Project spending matches allocated budget exactly,#3b82f6,Medium
+Over Budget,Project spending exceeds allocated budget,#f59e0b,High
+At Risk,Project budget is critically over allocated,#ef4444,Critical

@@ -1,0 +1,7 @@
+Phase,Description,Duration_Months,Success_Rate,Cost_Multiplier
+Concept,Initial project concept and planning,3,85,1.0
+Development,Core development and implementation,12,75,2.5
+Testing,Quality assurance and testing phase,6,90,1.8
+Regulatory,Compliance and regulatory approval,18,60,3.2
+Launch,Project deployment and go-live,2,95,1.2
+Maintenance,Ongoing support and maintenance,24,80,0.8

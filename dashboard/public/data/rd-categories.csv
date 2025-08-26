@@ -1,0 +1,9 @@
+Category,Description,Type,Complexity,Average_Duration_Months
+Basic Research,Fundamental scientific research and discovery,Research,High,24
+Applied Research,Practical application of research findings,Research,Medium,18
+Development,Product or service development,Development,Medium,12
+Clinical Trials,Medical testing and validation,Testing,High,36
+Regulatory,Compliance and regulatory processes,Process,Medium,18
+Prototyping,Initial prototype creation,Development,Low,6
+Testing & Validation,Quality assurance and testing,Testing,Medium,9
+IP & Patents,Intellectual property and patent work,Legal,High,24

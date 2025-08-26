@@ -1,0 +1,8 @@
+Status,Color,Description,Priority_Level
+Completed,#22c55e,Project successfully finished,Low
+On Track,#3b82f6,Project progressing as planned,Low
+Delayed,#f59e0b,Project behind schedule,Medium
+At Risk,#ef4444,Project in critical condition,High
+Planning,#8b5cf6,Project in planning phase,Low
+Testing,#06b6d4,Project in testing phase,Medium
+Development,#84cc16,Project in development phase,Medium

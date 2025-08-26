@@ -1,0 +1,13 @@
+Period,Abbreviation,Full_Name,Quarter,Season
+January,Jan,January,Q1,Winter
+February,Feb,February,Q1,Winter
+March,Mar,March,Q1,Spring
+April,Apr,April,Q2,Spring
+May,May,May,Q2,Spring
+June,Jun,June,Q2,Summer
+July,Jul,July,Q3,Summer
+August,Aug,August,Q3,Summer
+September,Sep,September,Q3,Fall
+October,Oct,October,Q4,Fall
+November,Nov,November,Q4,Fall
+December,Dec,December,Q4,Winter
