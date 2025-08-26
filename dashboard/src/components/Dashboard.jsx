@@ -1,106 +1,83 @@
-import React, { useEffect, useState, useRef } from 'react';
+/**
+ * Portfolio Dashboard - Main Dashboard Component
+ * 
+ * This is the primary dashboard interface that displays portfolio overview,
+ * project data, and provides filtering and visualization capabilities.
+ * 
+ * Key Features:
+ * - Portfolio hierarchy display (Portfolio > Program > Projects)
+ * - Data filtering and search functionality
+ * - Timeline visualization with multiple formats
+ * - Project status tracking with color coding
+ * - AI-powered insights integration
+ * - Export functionality for reports
+ */
+
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { loadCSV } from '../dataLoader';
 import PortfolioFilter from './PortfolioFilter';
 import ExportDropdown from './ExportDropdown';
 import AISidePanel from './AISidePanel';
 
+// Import new utilities and constants
+import { STATUS_COLORS, GANTT_CONFIG, UI_CONFIG } from '../constants';
+import { generateTimelineLabels, calculateDateRange } from '../utils/dateUtils';
+import { usePortfolioData } from '../hooks/usePortfolioData';
+
+// Import UI components
+import LoadingSpinner from './LoadingSpinner';
+
 import './Dashboard.css';
 
-function groupData(projects) {
-  // Group by Portfolio > Program > Projects
-  const portfolios = {};
-  projects.forEach(p => {
-    if (!portfolios[p.Portfolio]) portfolios[p.Portfolio] = {};
-    if (!portfolios[p.Portfolio][p.Program]) portfolios[p.Portfolio][p.Program] = [];
-    portfolios[p.Portfolio][p.Program].push(p);
-  });
-  return portfolios;
-}
-
-function generateTimelineLabels(start, end, format) {
-  const s = new Date(start);
-  const e = new Date(end);
-  const labels = [];
-  
-  switch (format) {
-    case 'months':
-      let d = new Date(s.getFullYear(), s.getMonth(), 1);
-      while (d <= e) {
-        labels.push(`${d.toLocaleString('default', { month: 'short' })} ${d.getFullYear()}`);
-        d.setMonth(d.getMonth() + 1);
-      }
-      break;
-      
-    case 'quarters':
-      let quarterStart = new Date(s.getFullYear(), Math.floor(s.getMonth() / 3) * 3, 1);
-      while (quarterStart <= e) {
-        const quarter = Math.floor(quarterStart.getMonth() / 3) + 1;
-        labels.push(`Q${quarter} ${quarterStart.getFullYear()}`);
-        quarterStart.setMonth(quarterStart.getMonth() + 3);
-      }
-      break;
-      
-
-      
-    case 'years':
-      let yearStart = new Date(s.getFullYear(), 0, 1);
-      while (yearStart <= e) {
-        labels.push(yearStart.getFullYear().toString());
-        yearStart.setFullYear(yearStart.getFullYear() + 1);
-      }
-      break;
-      
-    default:
-      let monthD = new Date(s.getFullYear(), s.getMonth(), 1);
-      while (monthD <= e) {
-        labels.push(`${monthD.toLocaleString('default', { month: 'short' })} ${monthD.getFullYear()}`);
-        monthD.setMonth(monthD.getMonth() + 1);
-      }
-  }
-  
-  // Filter out labels that would be too close together
-  if (format === 'months') {
-    const filteredLabels = [];
-    const totalDays = (e - s) / (1000 * 60 * 60 * 24);
-    
-    // If timeline is very long, show every 2nd or 3rd month to avoid crowding
-    if (totalDays > 1000) { // More than ~3 years
-      for (let i = 0; i < labels.length; i += 2) {
-        filteredLabels.push(labels[i]);
-      }
-    } else if (totalDays > 500) { // More than ~1.5 years
-      for (let i = 0; i < labels.length; i += 1) {
-        filteredLabels.push(labels[i]);
-      }
-    } else {
-      filteredLabels.push(...labels);
-    }
-    return filteredLabels;
-  }
-  
-  return labels;
-}
-
+/**
+ * Chevron icon component for expandable sections
+ * Rotates based on expanded state
+ * 
+ * @param {boolean} expanded - Whether the section is expanded
+ * @returns {JSX.Element} SVG chevron icon
+ */
 function Chevron({ expanded }) {
   return (
-    <svg className={`chevron${expanded ? ' expanded' : ''}`} width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M7 8l3 3 3-3" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <svg 
+      className={`chevron${expanded ? ' expanded' : ''}`} 
+      width="16" 
+      height="16" 
+      viewBox="0 0 20 20" 
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path 
+        d="M7 8l3 3 3-3" 
+        stroke="#2563eb" 
+        strokeWidth="2" 
+        strokeLinecap="round" 
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
+/**
+ * Returns the appropriate color for project status
+ * Provides visual consistency across the dashboard
+ * 
+ * @param {string} status - Project status string
+ * @returns {string} Hex color code for the status
+ */
 function getStatusColor(status) {
-  switch ((status || '').toLowerCase()) {
-    case 'on track': return '#22c55e'; // green
-    case 'delayed': return '#ef4444'; // red
-    case 'completed': return '#3b82f6'; // blue
-    case 'at risk': return '#f59e42'; // orange
-    default: return '#a3a3a3'; // gray
+  const statusLower = (status || '').toLowerCase();
+  
+  switch (statusLower) {
+    case 'on track': return STATUS_COLORS.ON_TRACK;
+    case 'delayed': return STATUS_COLORS.DELAYED;
+    case 'completed': return STATUS_COLORS.COMPLETED;
+    case 'at risk': return STATUS_COLORS.AT_RISK;
+    default: return STATUS_COLORS.DEFAULT;
   }
 }
 
 function GanttBar({ G0, G5_Previous, G5_Current, min, max, details, status, showTodayLine }) {
-  const [hover, setHover] = React.useState(false);
+  const [hover, setHover] = useState(false);
   const total = max - min;
   const prevStart = (new Date(G0) - min) / total * 100;
   const prevWidth = (new Date(G5_Previous) - new Date(G0)) / total * 100;
@@ -120,11 +97,25 @@ function GanttBar({ G0, G5_Previous, G5_Current, min, max, details, status, show
     >
       <div
         className="gantt-bar gantt-bar-previous"
-        style={{ left: `${prevStart}%`, width: `${prevWidth}%`, background: '#222', height: 6, top: 16, zIndex: 1 }}
+        style={{ 
+          left: `${prevStart}%`, 
+          width: `${prevWidth}%`, 
+          background: '#222', 
+          height: GANTT_CONFIG.PREVIOUS_BAR_HEIGHT, 
+          top: 16, 
+          zIndex: GANTT_CONFIG.Z_INDEX.PREVIOUS_BAR 
+        }}
       />
       <div
         className="gantt-bar gantt-bar-current"
-        style={{ left: `${currStart}%`, width: `${currWidth}%`, background: currColor, height: 12, top: 4, zIndex: 2 }}
+        style={{ 
+          left: `${currStart}%`, 
+          width: `${currWidth}%`, 
+          background: currColor, 
+          height: GANTT_CONFIG.CURRENT_BAR_HEIGHT, 
+          top: 4, 
+          zIndex: GANTT_CONFIG.Z_INDEX.CURRENT_BAR 
+        }}
       />
       {showTodayLine && todayPosition >= 0 && todayPosition <= 100 && (
         <div
@@ -134,10 +125,10 @@ function GanttBar({ G0, G5_Previous, G5_Current, min, max, details, status, show
             left: `${todayPosition}%`,
             top: 0,
             bottom: 0,
-            width: '3px',
-            background: '#dc2626',
-            zIndex: 5,
-            boxShadow: '0 0 4px rgba(220, 38, 38, 0.5)'
+            width: GANTT_CONFIG.TODAY_LINE.WIDTH,
+            background: GANTT_CONFIG.TODAY_LINE.COLOR,
+            zIndex: GANTT_CONFIG.Z_INDEX.TODAY_LINE,
+            boxShadow: GANTT_CONFIG.TODAY_LINE.SHADOW
           }}
           title="Today"
         />
@@ -149,12 +140,12 @@ function GanttBar({ G0, G5_Previous, G5_Current, min, max, details, status, show
           left: 0,
           background: '#fff',
           border: '1.5px solid #e5e7eb',
-          borderRadius: 8,
-          boxShadow: '0 4px 16px #0001',
-          padding: 12,
-          fontSize: 14,
-          zIndex: 10,
-          minWidth: 220
+          borderRadius: UI_CONFIG.TOOLTIP.BORDER_RADIUS,
+          boxShadow: UI_CONFIG.TOOLTIP.SHADOW,
+          padding: UI_CONFIG.TOOLTIP.PADDING,
+          fontSize: UI_CONFIG.TOOLTIP.FONT_SIZE,
+          zIndex: GANTT_CONFIG.Z_INDEX.TOOLTIP,
+          minWidth: UI_CONFIG.TOOLTIP.MIN_WIDTH
         }}>
           <div><b>G0:</b> {G0}</div>
           <div><b>G5 Previous:</b> {G5_Previous}</div>
@@ -171,8 +162,8 @@ function PortfolioCards({ portfolios, selected, onSelect }) {
   return (
     <div className="portfolio-cards-row">
       <div
-        className={`portfolio-card${!selected ? ' selected' : ''}`}
-        onClick={() => onSelect('')}
+        className={`portfolio-card${selected === 'All' ? ' selected' : ''}`}
+        onClick={() => onSelect('All')}
       >
         All
       </div>
@@ -234,33 +225,23 @@ function StatusFilter({ statuses, selectedStatuses, onStatusChange }) {
           className="select-header"
           onClick={() => setIsOpen(!isOpen)}
         >
-          <span className="select-value">{selectedText}</span>
-          <svg className={`select-arrow ${isOpen ? 'open' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          {selectedText}
+          <svg className="select-arrow" width="12" height="12" viewBox="0 0 12 12">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
         {isOpen && (
           <div className="select-dropdown">
-            <div className="select-option select-all" onClick={handleSelectAll}>
-              <input 
-                type="checkbox" 
-                checked={selectedStatuses.length === statuses.length}
-                readOnly
-              />
-              <span>All</span>
+            <div className="select-option" onClick={handleSelectAll}>
+              {selectedStatuses.length === statuses.length ? 'Deselect All' : 'Select All'}
             </div>
             {statuses.map(status => (
               <div 
                 key={status} 
-                className="select-option"
+                className={`select-option${selectedStatuses.includes(status) ? ' selected' : ''}`}
                 onClick={() => handleStatusToggle(status)}
               >
-                <input 
-                  type="checkbox" 
-                  checked={selectedStatuses.includes(status)}
-                  readOnly
-                />
-                <span>{status}</span>
+                {status}
               </div>
             ))}
           </div>
@@ -271,120 +252,138 @@ function StatusFilter({ statuses, selectedStatuses, onStatusChange }) {
 }
 
 export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPanelOpen }) {
-  const [projects, setProjects] = useState([]);
-  const [selectedPortfolio, setSelectedPortfolio] = useState('');
-  const [selectedStatuses, setSelectedStatuses] = useState([]);
-  const [expanded, setExpanded] = useState({});
-  const [allExpanded, setAllExpanded] = useState(true);
-  const [timelineFormat, setTimelineFormat] = useState('months');
+  // Use the custom hook for portfolio data management
+  const {
+    data: projects,
+    loading,
+    error,
+    selectedPortfolio,
+    setSelectedPortfolio,
+    selectedProgram,
+    setSelectedProgram,
+    searchTerm,
+    setSearchTerm,
+    selectedStatuses,
+    setSelectedStatuses,
+    timelineFormat,
+    setTimelineFormat,
+    groupedData,
+    portfolioNames,
+    programNames,
+    statusValues,
+    filteredData,
+    dateRange,
+    expanded,
+    isExpanded,
+    toggleExpanded,
+    resetFilters
+  } = usePortfolioData('/data/demo.csv');
 
+  // State for timeline format
+  const [timelineFormatLocal, setTimelineFormatLocal] = useState('months');
+
+  // Update local timeline format when hook timeline format changes
   useEffect(() => {
-    loadCSV(process.env.PUBLIC_URL + '/data/demo.csv', setProjects);
-  }, []);
+    setTimelineFormatLocal(timelineFormat);
+  }, [timelineFormat]);
 
-  // Get unique statuses from projects
-  const allStatuses = [...new Set(projects.map(p => p.Status).filter(Boolean))];
-
-  // Handle collapse/expand all functionality
-  const handleCollapseExpandAll = () => {
-    setAllExpanded(prev => !prev);
-    
-    if (allExpanded) {
-      // Collapse all
-      setExpanded({});
-    } else {
-      // Expand all
-      const grouped = groupData(selectedPortfolio ? projects.filter(p => p.Portfolio === selectedPortfolio) : projects);
-      const newExpanded = {};
-      Object.keys(grouped).forEach(portfolio => {
-        newExpanded[`portfolio-${portfolio}`] = true;
-        Object.keys(grouped[portfolio]).forEach(program => {
-          newExpanded[`portfolio-${portfolio}-program-${program}`] = true;
-        });
-      });
-      setExpanded(newExpanded);
-    }
+  // Handle timeline format change
+  const handleTimelineFormatChange = (format) => {
+    setTimelineFormatLocal(format);
+    setTimelineFormat(format);
   };
 
-  // Expand all portfolios and programs by default when projects or filter changes
-  useEffect(() => {
-    if (allExpanded) {
-      const grouped = groupData(selectedPortfolio ? projects.filter(p => p.Portfolio === selectedPortfolio) : projects);
-      const newExpanded = {};
-      Object.keys(grouped).forEach(portfolio => {
-        newExpanded[`portfolio-${portfolio}`] = true;
-        Object.keys(grouped[portfolio]).forEach(program => {
-          newExpanded[`portfolio-${portfolio}-program-${program}`] = true;
-        });
-      });
-      setExpanded(newExpanded);
-    }
-  }, [projects, selectedPortfolio, allExpanded]);
+  // Get date range from the hook - safely handle undefined dateRange
+  const { minDate, maxDate } = dateRange || { minDate: new Date(), maxDate: new Date() };
 
-  // Filter projects by portfolio and status
-  const filtered = projects.filter(p => {
-    const portfolioMatch = !selectedPortfolio || p.Portfolio === selectedPortfolio;
-    const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(p.Status);
-    return portfolioMatch && statusMatch;
-  });
-  
-  const grouped = groupData(filtered);
-  const portfolios = Object.keys(groupData(projects));
+  // Generate timeline labels using utility function - safely handle dates
+  const timelineLabels = useMemo(() => {
+    if (!minDate || !maxDate) return [];
+    return generateTimelineLabels(minDate, maxDate, timelineFormatLocal);
+  }, [minDate, maxDate, timelineFormatLocal]);
 
-  // Find min/max dates for Gantt based on filtered data
-  const allDates = filtered.length > 0 
-    ? filtered.flatMap(p => [p.G0, p.G5_Previous, p.G5_Current]).map(d => new Date(d))
-    : projects.flatMap(p => [p.G0, p.G5_Previous, p.G5_Current]).map(d => new Date(d));
-  
-  // Filter out invalid dates and ensure we have valid dates
-  const validDates = allDates.filter(date => date instanceof Date && !isNaN(date));
-  
-  // Debug logging
-  console.log('All dates:', allDates);
-  console.log('Valid dates:', validDates);
-  console.log('Projects:', projects);
-  console.log('Filtered:', filtered);
-  
-  let minDate, maxDate;
-  if (validDates.length > 0) {
-    minDate = new Date(Math.min(...validDates));
-    maxDate = new Date(Math.max(...validDates));
-  } else {
-    // Fallback to current date if no valid dates found
-    minDate = new Date();
-    maxDate = new Date();
-    minDate.setFullYear(minDate.getFullYear() - 1);
-    maxDate.setFullYear(maxDate.getFullYear() + 1);
+  // Loading state
+  if (loading) {
+    return (
+      <div className="dashboard-loading">
+        <LoadingSpinner 
+          size="large" 
+          text="Loading portfolio data..." 
+          variant="ring"
+        />
+      </div>
+    );
   }
-  
-  // Extend the timeline to show future time beyond today
-  const today = new Date();
-  const futureBuffer = 6; // Show 6 months into the future
-  const extendedMaxDate = new Date(today);
-  extendedMaxDate.setMonth(today.getMonth() + futureBuffer);
-  
-  // Use the later of project end date or extended future date
-  if (extendedMaxDate > maxDate) {
-    maxDate = extendedMaxDate;
-  }
-  
-  console.log('Min date:', minDate, 'Type:', typeof minDate);
-  console.log('Max date:', maxDate, 'Type:', typeof maxDate);
-  
-  const timelineLabels = generateTimelineLabels(minDate, maxDate, timelineFormat);
 
-  // Expand/collapse helpers
-  const isExpanded = (key) => expanded[key];
-  const toggle = (key) => setExpanded(e => ({ ...e, [key]: !e[key] }));
+  // Error state
+  if (error) {
+    return (
+      <div className="dashboard-error">
+        <h2>Error Loading Data</h2>
+        <p>{error}</p>
+        <button onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
+  }
+
+  // No data state - check both projects array and filtered data
+  if (!projects || projects.length === 0) {
+    return (
+      <div className="dashboard-no-data">
+        <h2>No Data Available</h2>
+        <p>No portfolio data found. Please check your data source.</p>
+      </div>
+    );
+  }
 
   // Render rows recursively
   const renderRows = () => {
     let rows = [];
-    Object.entries(grouped).forEach(([portfolio, programs]) => {
+    
+    // Safely handle filteredData - use filtered data instead of groupedData
+    if (!filteredData || filteredData.length === 0) {
+      return (
+        <tr>
+          <td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>
+            No data to display
+          </td>
+        </tr>
+      );
+    }
+    
+    // Create grouped structure from filtered data instead of all data
+    const groupedFilteredData = {};
+    filteredData.forEach(project => {
+      // Create portfolio level if it doesn't exist
+      if (!groupedFilteredData[project.Portfolio]) {
+        groupedFilteredData[project.Portfolio] = {};
+      }
+      
+      // Create program level if it doesn't exist
+      if (!groupedFilteredData[project.Portfolio][project.Program]) {
+        groupedFilteredData[project.Portfolio][project.Program] = [];
+      }
+      
+      // Add project to the appropriate program
+      groupedFilteredData[project.Portfolio][project.Program].push(project);
+    });
+    
+    // Safely handle groupedFilteredData
+    if (Object.keys(groupedFilteredData).length === 0) {
+      return (
+        <tr>
+          <td colSpan="4" style={{ textAlign: 'center', padding: '2rem' }}>
+            No data to display
+          </td>
+        </tr>
+      );
+    }
+    
+    Object.entries(groupedFilteredData).forEach(([portfolio, programs]) => {
       const pKey = `portfolio-${portfolio}`;
       rows.push(
         <tr key={pKey} className="group-row portfolio-row">
-          <td className="group-label" style={{ fontWeight: 'bold', cursor: 'pointer' }} onClick={() => toggle(pKey)}>
+          <td className="group-label" style={{ fontWeight: 'bold', cursor: 'pointer' }} onClick={() => toggleExpanded(pKey)}>
             <Chevron expanded={isExpanded(pKey)} /> {portfolio}
           </td>
           <td></td>
@@ -397,7 +396,7 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
           const prKey = `${pKey}-program-${program}`;
           rows.push(
             <tr key={prKey} className="group-row program-row">
-              <td className="group-label" style={{ fontWeight: 'bold', paddingLeft: 24, cursor: 'pointer' }} onClick={() => toggle(prKey)}>
+              <td className="group-label" style={{ fontWeight: 'bold', paddingLeft: UI_CONFIG.INDENTATION.PROGRAM_LEVEL, cursor: 'pointer' }} onClick={() => toggleExpanded(prKey)}>
                 <Chevron expanded={isExpanded(prKey)} /> {program}
               </td>
               <td></td>
@@ -409,7 +408,7 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
             projs.forEach(proj => {
               rows.push(
                 <tr key={proj.BPM_ID} className="project-row">
-                  <td style={{ paddingLeft: 48 }}>{proj.Project}</td>
+                  <td style={{ paddingLeft: UI_CONFIG.INDENTATION.PROJECT_LEVEL }}>{proj.Project}</td>
                   <td>{proj.BPM_ID}</td>
                   <td>{proj.Project_Manager}</td>
                   <td>
@@ -447,7 +446,6 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
       
       <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
         <div className="dashboard-container">
-
         
         <div className="dashboard-title">
           <div className="title-content">
@@ -477,28 +475,25 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
         <div className="filters-section">
           <div className="filter-row">
             <PortfolioFilter
-              portfolios={portfolios}
+                portfolios={portfolioNames}
               selected={selectedPortfolio}
               onSelect={setSelectedPortfolio}
             />
             <StatusFilter
-              statuses={allStatuses}
+                statuses={statusValues}
               selectedStatuses={selectedStatuses}
               onStatusChange={setSelectedStatuses}
             />
           </div>
-          
         </div>
 
         <div className="portfolio-section-header">
         </div>
         <PortfolioCards
-          portfolios={portfolios}
+            portfolios={portfolioNames}
           selected={selectedPortfolio}
           onSelect={setSelectedPortfolio}
         />
-        
-
         
         <div className="legend-section">
           <div className="legend-header">
@@ -514,8 +509,8 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
             <div className="timeline-format-selector">
               <label className="filter-label">Timeline Format:</label>
               <select 
-                value={timelineFormat} 
-                onChange={(e) => setTimelineFormat(e.target.value)}
+                  value={timelineFormatLocal} 
+                  onChange={(e) => handleTimelineFormatChange(e.target.value)}
                 className="timeline-format-select"
               >
                 <option value="months">Months</option>
@@ -523,21 +518,13 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
                 <option value="years">Years</option>
               </select>
             </div>
-            
-            <button
-              className="collapse-expand-btn"
-              aria-label={allExpanded ? "Collapse all" : "Expand all"}
-              onClick={handleCollapseExpandAll}
-            >
-              {allExpanded ? "Collapse All" : "Expand All"}
-            </button>
-          </div>
+            </div>
         </div>
         
         <div className="dashboard-table-wrapper">
           <div className="chart-header-with-export">
           </div>
-          {filtered.length === 0 ? (
+            {filteredData.length === 0 ? (
             <div className="no-data-message">No data to display</div>
           ) : (
             <div style={{ position: 'relative' }}>
@@ -554,7 +541,7 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
                           let labelPosition;
                           let displayLabel;
                           
-                          if (timelineFormat === 'months') {
+                            if (timelineFormatLocal === 'months') {
                             // Evenly space months across the timeline
                             labelPosition = (index / (timelineLabels.length - 1)) * 100;
                             displayLabel = label.split(' ')[0];
@@ -597,8 +584,8 @@ export default function Dashboard({ sidebarCollapsed, isAIPanelOpen, setIsAIPane
                                   minWidth: 'auto'
                                 }}
                               >
-                                {timelineFormat === 'quarters' ? label.split(' ')[0] : 
-                                 timelineFormat === 'weeks' ? label.split(' ')[0] : 
+                                  {timelineFormatLocal === 'quarters' ? label.split(' ')[0] : 
+                                   timelineFormatLocal === 'weeks' ? label.split(' ')[0] : 
                                  label}
                               </span>
                             );

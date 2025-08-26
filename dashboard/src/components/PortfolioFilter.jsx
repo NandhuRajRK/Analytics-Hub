@@ -7,10 +7,10 @@ export default function PortfolioFilter({ portfolios, selected, onSelect }) {
       <select
         id="portfolio-select"
         className="portfolio-select"
-        value={selected || ''}
+        value={selected || 'All'}
         onChange={e => onSelect(e.target.value)}
       >
-        <option value="">All</option>
+        <option value="All">All</option>
         {portfolios.map(p => (
           <option key={p} value={p}>{p}</option>
         ))}

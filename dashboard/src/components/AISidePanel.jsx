@@ -6,6 +6,8 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
   const [response, setResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [isUploading, setIsUploading] = useState(false);
   const [suggestedQueries] = useState([
     "Which portfolio has the highest budget utilization?",
     "Show me projects at risk and their dependencies",
@@ -18,6 +20,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
   ]);
 
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,7 +30,114 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
     scrollToBottom();
   }, [conversationHistory]);
 
-  // Prepare data context for LLM
+  // Handle file uploads
+  const handleFileUpload = async (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+
+    setIsUploading(true);
+    const newDocuments = [];
+
+    try {
+      for (const file of files) {
+        // Check file size (limit to 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`File ${file.name} is too large. Maximum size is 10MB.`);
+          continue;
+        }
+
+        // Check file type
+        const allowedTypes = [
+          'text/plain',
+          'text/csv',
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'application/vnd.ms-excel',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
+
+        if (!allowedTypes.includes(file.type)) {
+          alert(`File type ${file.type} is not supported.`);
+          continue;
+        }
+
+        // Read file content
+        const content = await readFileContent(file);
+        
+        const document = {
+          id: Date.now() + Math.random(),
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          content: content,
+          uploadedAt: new Date(),
+          lastUsed: null
+        };
+
+        newDocuments.push(document);
+      }
+
+      setUploadedDocuments(prev => [...prev, ...newDocuments]);
+      alert(`Successfully uploaded ${newDocuments.length} document(s)`);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+      alert('Error uploading files. Please try again.');
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Read file content based on file type
+  const readFileContent = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        try {
+          let content = e.target.result;
+          
+          // For text files, use as-is
+          if (file.type === 'text/plain' || file.type === 'text/csv') {
+            resolve(content);
+          }
+          // For PDFs, we'll need to extract text (simplified for now)
+          else if (file.type === 'application/pdf') {
+            // For now, we'll store a placeholder - in production you'd use a PDF parser
+            resolve(`PDF Document: ${file.name} (Content extraction requires PDF parser library)`);
+          }
+          // For Office documents, we'll store a placeholder
+          else if (file.type.includes('word') || file.type.includes('excel')) {
+            resolve(`Office Document: ${file.name} (Content extraction requires Office parser library)`);
+          }
+          else {
+            resolve(content);
+          }
+        } catch (error) {
+          reject(error);
+        }
+      };
+      
+      reader.onerror = reject;
+      
+      if (file.type === 'text/plain' || file.type === 'text/csv') {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    });
+  };
+
+  // Remove uploaded document
+  const removeDocument = (documentId) => {
+    setUploadedDocuments(prev => prev.filter(doc => doc.id !== documentId));
+  };
+
+  // Prepare data context for LLM including uploaded documents
   const prepareDataContext = () => {
     const filteredProjects = projects.filter(project => {
       if (selectedPortfolio && project.portfolio !== selectedPortfolio) return false;
@@ -71,6 +181,15 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
       }
     });
 
+    // Prepare document context
+    const documentContext = uploadedDocuments.map(doc => ({
+      id: doc.id,
+      name: doc.name,
+      type: doc.type,
+      content: doc.content,
+      uploadedAt: doc.uploadedAt.toISOString()
+    }));
+
     return {
       portfolios,
       programs,
@@ -82,7 +201,8 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
         end: p.endDate,
         status: p.status
       })),
-      dependencies
+      dependencies,
+      uploadedDocuments: documentContext
     };
   };
 
@@ -97,6 +217,14 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
 
     try {
       const dataContext = prepareDataContext();
+      
+      // Update lastUsed timestamp for uploaded documents
+      if (uploadedDocuments.length > 0) {
+        setUploadedDocuments(prev => prev.map(doc => ({
+          ...doc,
+          lastUsed: new Date()
+        })));
+      }
       
       const response = await fetch('http://localhost:8000/api/llm/query', {
         method: 'POST',
@@ -158,6 +286,16 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
     setResponse(null);
   };
 
+  const clearDocuments = () => {
+    setUploadedDocuments([]);
+  };
+
+  const clearAll = () => {
+    setConversationHistory([]);
+    setResponse(null);
+    setUploadedDocuments([]);
+  };
+
   const handleSuggestedQuery = (suggestedQuery) => {
     setQuery(suggestedQuery);
   };
@@ -210,6 +348,13 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
               onClick={clearConversation}
               title="Clear conversation"
             >
+              💬
+            </button>
+            <button 
+              className="clear-docs-btn"
+              onClick={clearAll}
+              title="Clear everything"
+            >
               🗑️
             </button>
             <button 
@@ -223,131 +368,154 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
         </div>
 
         <div className="ai-side-panel-content">
-          <div className="conversation-container">
-            {conversationHistory.length === 0 ? (
-              <div className="welcome-message">
-                <div className="welcome-icon">👋</div>
-                <h4>Welcome to your AI Assistant!</h4>
-                <p>Ask me anything about your portfolio data, budgets, project statuses, and more.</p>
-                
-                <div className="suggested-queries">
-                  <h5>Try asking me:</h5>
-                  <div className="query-chips">
-                    {suggestedQueries.map((suggestedQuery, index) => (
-                      <button
-                        key={index}
-                        className="query-chip"
-                        onClick={() => handleSuggestedQuery(suggestedQuery)}
-                      >
-                        {suggestedQuery}
-                      </button>
-                    ))}
+          {/* Welcome Message */}
+          {conversationHistory.length === 0 && (
+            <div className="welcome-message">
+              <div className="welcome-emoji">👋</div>
+              <h2>Welcome to your AI Assistant!</h2>
+              <p>Ask me anything about your portfolio data, budgets, project statuses, and more.</p>
+              
+              <div className="suggested-questions-section">
+                <label htmlFor="question-dropdown" className="suggested-questions-label">Try asking me:</label>
+                <select 
+                  id="question-dropdown"
+                  className="question-dropdown"
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      setQuery(e.target.value);
+                      e.target.value = ''; // Reset to default
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>Select a question...</option>
+                  <option value="Which portfolio has the highest budget utilization?">Which portfolio has the highest budget utilization?</option>
+                  <option value="Show me projects at risk and their dependencies">Show me projects at risk and their dependencies</option>
+                  <option value="What's the budget distribution across different project statuses?">What's the budget distribution across different project statuses?</option>
+                  <option value="Identify potential resource conflicts in the next quarter">Identify potential resource conflicts in the next quarter</option>
+                  <option value="Which programs are performing best?">Which programs are performing best?</option>
+                  <option value="What's the overall portfolio health status?">What's the overall portfolio health status?</option>
+                  <option value="Show me delayed projects and their impact">Show me delayed projects and their impact</option>
+                  <option value="Analyze budget allocation efficiency">Analyze budget allocation efficiency</option>
+                </select>
+              </div>
+            </div>
+          )}
+          
+          {/* Conversation Messages */}
+          {conversationHistory.length > 0 && (
+            <div className="conversation-messages">
+              {conversationHistory.map((message, index) => (
+                <div key={index} className={`message ${message.type}`}>
+                  <div className="message-header">
+                    <span className="message-type">
+                      {message.type === 'user' ? '👤 You' : '🤖 AI Assistant'}
+                    </span>
+                    <span className="message-time">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="message-content">
+                    {message.content}
                   </div>
                 </div>
+              ))}
+              
+              {isLoading && (
+                <div className="message assistant loading">
+                  <div className="message-header">
+                    <span className="message-type">🤖 AI Assistant</span>
+                    <span className="message-time">Now</span>
+                  </div>
+                  <div className="message-content">
+                    <div className="loading-indicator">
+                      <div className="loading-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </div>
+                      Analyzing your data...
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+
+          {/* Uploaded Documents Summary */}
+          {uploadedDocuments.length > 0 && (
+            <div className="documents-summary">
+              <div className="documents-summary-header">
+                <span className="documents-icon">📎</span>
+                <span className="documents-count">{uploadedDocuments.length} document{uploadedDocuments.length !== 1 ? 's' : ''} uploaded</span>
+                <button
+                  className="clear-docs-btn-small"
+                  onClick={clearDocuments}
+                  title="Clear all documents"
+                >
+                  ×
+                </button>
               </div>
-            ) : (
-              <div className="conversation-messages">
-                {conversationHistory.map((message, index) => (
-                  <div key={index} className={`message ${message.type}`}>
-                    <div className="message-header">
-                      <span className="message-avatar">
-                        {message.type === 'user' ? '👤' : '🤖'}
-                      </span>
-                      <span className="message-timestamp">
-                        {message.timestamp.toLocaleTimeString()}
-                      </span>
-                    </div>
-                    
-                    <div className="message-content">
-                      {message.content}
-                    </div>
-
-                    {message.type === 'assistant' && message.insights && (
-                      <div className="message-insights">
-                        <h5>💡 Key Insights:</h5>
-                        <ul>
-                          {message.insights.map((insight, i) => (
-                            <li key={i}>{insight}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {message.type === 'assistant' && message.recommendations && (
-                      <div className="message-recommendations">
-                        <h5>🚀 Recommendations:</h5>
-                        <ul>
-                          {message.recommendations.map((rec, i) => (
-                            <li key={i}>{rec}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {message.type === 'assistant' && message.data_summary && Object.keys(message.data_summary).length > 0 && (
-                      <div className="message-summary">
-                        <h5>📊 Data Summary:</h5>
-                        <div className="summary-grid">
-                          {Object.entries(message.data_summary).map(([key, value]) => (
-                            <div key={key} className="summary-item">
-                              <span className="summary-label">{key.replace(/_/g, ' ').toUpperCase()}:</span>
-                              <span className="summary-value">
-                                {typeof value === 'number' ? value.toLocaleString() : JSON.stringify(value)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+              <div className="documents-preview">
+                {uploadedDocuments.slice(0, 3).map((doc, index) => (
+                  <div key={index} className="document-preview-item" title={doc.name}>
+                    {doc.name}
                   </div>
                 ))}
-                
-                {isLoading && (
-                  <div className="message assistant loading">
-                    <div className="message-header">
-                      <span className="message-avatar">🤖</span>
-                      <span className="message-timestamp">Now</span>
-                    </div>
-                    <div className="message-content">
-                      <div className="loading-indicator">
-                        <div className="loading-dots">
-                          <span></span>
-                          <span></span>
-                          <span></span>
-                        </div>
-                        Analyzing your data...
-                      </div>
-                    </div>
-                  </div>
+                {uploadedDocuments.length > 3 && (
+                  <span className="document-preview-more">+{uploadedDocuments.length - 3} more</span>
                 )}
-                
-                <div ref={messagesEndRef} />
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
+          {/* Chat Input Area - Now at the bottom */}
           <div className="query-input-container">
             <div className="query-input-wrapper">
-              <textarea
-                className="query-input"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me about your portfolio data..."
-                rows={2}
-                disabled={isLoading}
-              />
-              <button
-                className="ask-btn"
-                onClick={askAssistant}
-                disabled={!query.trim() || isLoading}
-              >
-                {isLoading ? 'Analyzing...' : 'Ask'}
-              </button>
-            </div>
-            
-            <div className="input-hint">
-              💡 Press Enter to send, Shift+Enter for new line
+              <div className="centered-input-container">
+                <div className="input-field-container">
+                  {/* Hidden file input for document upload */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept=".txt,.csv,.pdf,.doc,.docx,.xls,.xlsx"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                  />
+                  
+                  {/* Upload button that triggers file input */}
+                  <button
+                    className="plus-icon-btn"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    title="Upload documents"
+                  >
+                    {isUploading ? '📤' : '+'}
+                  </button>
+                  
+                  <textarea
+                    className="centered-query-input"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask anything"
+                    rows={1}
+                    disabled={isLoading}
+                  />
+                  
+                  <button
+                    className="send-icon-btn"
+                    onClick={askAssistant}
+                    disabled={!query.trim() || isLoading}
+                    title="Send message"
+                  >
+                    {isLoading ? '⏳' : '↗️'}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

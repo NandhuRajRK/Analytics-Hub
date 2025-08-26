@@ -1,10 +1,85 @@
+# Portfolio Dashboard Backend Dependencies
+# This file lists all Python packages required for the backend API
+# Install using: pip install -r requirements.txt
+
+# ============================================================================
+# CORE WEB FRAMEWORK
+# ============================================================================
+
+# FastAPI - Modern, fast web framework for building APIs with Python
+# Provides automatic API documentation, data validation, and high performance
 fastapi==0.116.1
+
+# Uvicorn - ASGI server for running FastAPI applications
+# Handles HTTP requests and WebSocket connections
 uvicorn==0.35.0
+
+# Python-multipart - Handles form data and file uploads
+# Required for FastAPI to process multipart form data
 python-multipart==0.0.20
+
+# ============================================================================
+# HTTP AND NETWORKING
+# ============================================================================
+
+# Requests - HTTP library for making API calls
+# Used for external API integrations and data fetching
 requests==2.32.5
+
+# ============================================================================
+# AI AND LANGUAGE MODELS
+# ============================================================================
+
+# OpenAI - Official Python client for OpenAI API
+# Enables integration with GPT models for AI-powered insights
 openai==1.101.0
+
+# LangChain - Framework for building LLM-powered applications
+# Provides tools for prompt engineering and LLM integration
 langchain==0.3.27
+
+# LangChain Community - Community-maintained LangChain integrations
+# Additional connectors and tools for various LLM providers
 langchain-community==0.3.27
-pydantic==2.11.7
-python-dotenv==1.1.1
+
+# Ollama - Python client for Ollama local LLM server
+# Enables local AI processing without external API calls
 ollama==0.5.3
+
+# ============================================================================
+# DATA VALIDATION AND CONFIGURATION
+# ============================================================================
+
+# Pydantic - Data validation and settings management
+# Used by FastAPI for request/response validation and data models
+pydantic==2.11.7
+
+# Python-dotenv - Environment variable management
+# Loads configuration from .env files for API keys and settings
+python-dotenv==1.1.1
+
+# ============================================================================
+# OPTIONAL DEPENDENCIES (Uncomment if needed)
+# ============================================================================
+
+# For production deployment:
+# gunicorn==21.2.0                    # Production WSGI server
+# uvicorn[standard]==0.35.0           # Standard uvicorn with additional features
+
+# For database integration:
+# sqlalchemy==2.0.23                  # SQL toolkit and ORM
+# psycopg2-binary==2.9.7             # PostgreSQL adapter
+# pymongo==4.5.0                      # MongoDB driver
+
+# For caching and performance:
+# redis==5.0.1                        # Redis client for caching
+# celery==5.3.4                       # Task queue for background jobs
+
+# For monitoring and logging:
+# structlog==23.2.0                   # Structured logging
+# prometheus-client==0.17.1           # Metrics collection
+
+# For testing:
+# pytest==7.4.3                       # Testing framework
+# httpx==0.25.2                       # HTTP client for testing
+# pytest-asyncio==0.21.1              # Async testing support
