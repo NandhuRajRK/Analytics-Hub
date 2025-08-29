@@ -1,9 +1,9 @@
 /**
  * Loading Spinner Component
- * 
+ *
  * A reusable loading indicator that can be used throughout the application
  * to show loading states with consistent styling and animations.
- * 
+ *
  * Features:
  * - Customizable size and color
  * - Smooth CSS animations
@@ -11,12 +11,11 @@
  * - Multiple spinner styles
  */
 
-import React from 'react';
 import './LoadingSpinner.css';
 
 /**
  * Loading Spinner Component
- * 
+ *
  * @param {Object} props - Component props
  * @param {string} props.size - Size of the spinner ('small', 'medium', 'large')
  * @param {string} props.color - Color of the spinner (hex, rgb, or CSS color)
@@ -25,17 +24,17 @@ import './LoadingSpinner.css';
  * @param {boolean} props.fullScreen - Whether to render as full screen overlay
  * @returns {JSX.Element} Loading spinner component
  */
-function LoadingSpinner({ 
-  size = 'medium', 
-  color = '#2563eb', 
-  text = 'Loading...', 
+function LoadingSpinner({
+  size = 'medium',
+  color = '#2563eb',
+  text = 'Loading...',
   variant = 'ring',
-  fullScreen = false 
+  fullScreen = false,
 }) {
   const spinnerClasses = [
     'loading-spinner',
     `loading-spinner--${size}`,
-    `loading-spinner--${variant}`
+    `loading-spinner--${variant}`,
   ].join(' ');
 
   const spinnerContent = (
@@ -48,11 +47,11 @@ function LoadingSpinner({
             <div className="loading-dot"></div>
           </>
         )}
-        
+
         {variant === 'ring' && (
           <div className="loading-ring"></div>
         )}
-        
+
         {variant === 'bars' && (
           <>
             <div className="loading-bar"></div>
@@ -61,7 +60,7 @@ function LoadingSpinner({
           </>
         )}
       </div>
-      
+
       {text && (
         <p className="loading-text" style={{ color }}>
           {text}

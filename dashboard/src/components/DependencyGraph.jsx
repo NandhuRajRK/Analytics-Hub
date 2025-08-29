@@ -1,9 +1,12 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+
 import { loadCSV } from '../dataLoader';
-import PortfolioFilter from './PortfolioFilter';
-import ExportDropdown from './ExportDropdown';
+
 import AISidePanel from './AISidePanel';
+import ExportDropdown from './ExportDropdown';
+import PortfolioFilter from './PortfolioFilter';
+
 import './DependencyGraph.css';
 
 // Simple StatusFilter component for dependency graph
@@ -19,6 +22,7 @@ function StatusFilter({ statuses, selectedStatuses, onStatusChange }) {
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
@@ -38,45 +42,76 @@ function StatusFilter({ statuses, selectedStatuses, onStatusChange }) {
     }
   };
 
-  const selectedText = selectedStatuses.length === 0 
-    ? 'All' 
-    : selectedStatuses.length === 1 
-      ? selectedStatuses[0] 
+  const selectedText = selectedStatuses.length === 0
+    ? 'All'
+    : selectedStatuses.length === 1
+      ? selectedStatuses[0]
       : `${selectedStatuses.length} Statuses`;
 
   return (
     <div className="status-filter-container">
-      <label className="filter-label">Status:</label>
+      <label className="filter-label" htmlFor="status-filter">Status:</label>
       <div className="custom-select" ref={dropdownRef}>
-        <div 
+        <div
           className="select-header"
           onClick={() => setIsOpen(!isOpen)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              setIsOpen(!isOpen);
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={`Status filter: ${selectedText}`}
+          aria-expanded={isOpen}
+          aria-haspopup="listbox"
         >
           <span className="select-value">{selectedText}</span>
-          <svg className={`select-arrow ${isOpen ? 'open' : ''}`} width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg className={`select-arrow ${isOpen ? 'open' : ''}`} fill="none" height="16" viewBox="0 0 24 24" width="16">
+            <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
           </svg>
         </div>
         {isOpen && (
           <div className="select-dropdown">
-            <div className="select-option select-all" onClick={handleSelectAll}>
-              <input 
-                type="checkbox" 
+            <div
+              className="select-option select-all"
+              onClick={handleSelectAll}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  handleSelectAll();
+                }
+              }}
+              role="option"
+              tabIndex={0}
+              aria-label={selectedStatuses.length === statuses.length ? 'Deselect All' : 'Select All'}
+              aria-selected={selectedStatuses.length === statuses.length}
+            >
+              <input
                 checked={selectedStatuses.length === statuses.length}
                 readOnly
+                type="checkbox"
               />
               <span>All</span>
             </div>
             {statuses.map(status => (
-              <div 
-                key={status} 
+              <div
                 className="select-option"
+                key={status}
                 onClick={() => handleStatusToggle(status)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleStatusToggle(status);
+                  }
+                }}
+                role="option"
+                tabIndex={0}
+                aria-label={`Select ${status} status`}
+                aria-selected={selectedStatuses.includes(status)}
               >
-                <input 
-                  type="checkbox" 
+                <input
                   checked={selectedStatuses.includes(status)}
                   readOnly
+                  type="checkbox"
                 />
                 <span>{status}</span>
               </div>
@@ -94,19 +129,15 @@ export default function DependencyGraph({ sidebarCollapsed }) {
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const svgRef = useRef();
   const [selectedNode, setSelectedNode] = useState(null);
-  const [graphData, setGraphData] = useState({ nodes: [], links: [] });
   const [insights, setInsights] = useState([]);
-  const [criticalPaths, setCriticalPaths] = useState([]);
   const [riskMetrics, setRiskMetrics] = useState({});
-  
+
   // AI Assistant state
   const [isAIPanelOpen, setIsAIPanelOpen] = useState(false);
 
-
-
   // Load project data
   useEffect(() => {
-    loadCSV(process.env.PUBLIC_URL + '/data/demo.csv', setProjects);
+    loadCSV(`${process.env.PUBLIC_URL}/data/demo.csv`, setProjects);
   }, []);
 
   // Get unique portfolios and statuses
@@ -118,6 +149,7 @@ export default function DependencyGraph({ sidebarCollapsed }) {
     return projects.filter(p => {
       const portfolioMatch = !selectedPortfolio || p.Portfolio === selectedPortfolio;
       const statusMatch = selectedStatuses.length === 0 || selectedStatuses.includes(p.Status);
+
       return portfolioMatch && statusMatch;
     });
   }, [projects, selectedPortfolio, selectedStatuses]);
@@ -137,59 +169,61 @@ export default function DependencyGraph({ sidebarCollapsed }) {
   const createD3Visualization = useCallback((nodes, links) => {
     if (!svgRef.current) return;
 
-    console.log('Starting D3 visualization with:', nodes.length, 'nodes and', links.length, 'links');
+    console.log(`Starting D3 visualization with: ${nodes.length} nodes and ${links.length} links`);
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove();
+
+    svg.selectAll('*').remove();
 
     // Set explicit SVG dimensions
     const width = 800;
     const height = 600;
-    svg.attr("width", width).attr("height", height);
+
+    svg.attr('width', width).attr('height', height);
 
     // Create simulation with better constraints
     const simulation = d3.forceSimulation(nodes)
-      .force("link", d3.forceLink(links).id(d => d.id).distance(80))
-      .force("charge", d3.forceManyBody().strength(-200))
-      .force("center", d3.forceCenter(width / 2, height / 2))
-      .force("collision", d3.forceCollide().radius(25))
-      .force("x", d3.forceX(width / 2).strength(0.1))
-      .force("y", d3.forceY(height / 2).strength(0.1));
+      .force('link', d3.forceLink(links).id(d => d.id).distance(80))
+      .force('charge', d3.forceManyBody().strength(-200))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(25))
+      .force('x', d3.forceX(width / 2).strength(0.1))
+      .force('y', d3.forceY(height / 2).strength(0.1));
 
     // Add viewBox for proper scaling
-    svg.attr("viewBox", `0 0 ${width} ${height}`);
+    svg.attr('viewBox', `0 0 ${width} ${height}`);
 
     // Add background rectangle for debugging
-    svg.append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("fill", "#f8fafc")
-      .attr("stroke", "#e5e7eb")
-      .attr("stroke-width", 1);
+    svg.append('rect')
+      .attr('width', width)
+      .attr('height', height)
+      .attr('fill', '#f8fafc')
+      .attr('stroke', '#e5e7eb')
+      .attr('stroke-width', 1);
 
     // Create links
-    const link = svg.append("g")
-      .selectAll("line")
+    const link = svg.append('g')
+      .selectAll('line')
       .data(links)
-      .join("line")
-      .attr("stroke", d => d.type === 'hierarchy' ? "#94a3b8" : "#ef4444")
-      .attr("stroke-width", d => d.type === 'hierarchy' ? 2 : 3)
-      .attr("stroke-dasharray", d => d.type === 'dependency' ? "5,5" : "none");
+      .join('line')
+      .attr('stroke', d => d.type === 'hierarchy' ? '#94a3b8' : '#ef4444')
+      .attr('stroke-width', d => d.type === 'hierarchy' ? 2 : 3)
+      .attr('stroke-dasharray', d => d.type === 'dependency' ? '5,5' : 'none');
 
     // Create nodes
-    const node = svg.append("g")
-      .selectAll("g")
+    const node = svg.append('g')
+      .selectAll('g')
       .data(nodes)
-      .join("g")
-      .attr("class", "node")
+      .join('g')
+      .attr('class', 'node')
       .call(d3.drag()
-        .on("start", dragstarted)
-        .on("drag", dragged)
-        .on("end", dragended));
+        .on('start', dragstarted)
+        .on('drag', dragged)
+        .on('end', dragended));
 
     // Add circles to nodes
-    node.append("circle")
-      .attr("r", d => {
+    node.append('circle')
+      .attr('r', d => {
         switch(d.type) {
           case 'portfolio': return 25;
           case 'program': return 20;
@@ -197,57 +231,57 @@ export default function DependencyGraph({ sidebarCollapsed }) {
           default: return 15;
         }
       })
-      .attr("fill", d => {
+      .attr('fill', d => {
         switch(d.type) {
-          case 'portfolio': return "#2563eb";
-          case 'program': return "#7c3aed";
+          case 'portfolio': return '#2563eb';
+          case 'program': return '#7c3aed';
           case 'project': return getStatusColor(d.status);
-          default: return "#6b7280";
+          default: return '#6b7280';
         }
       })
-      .attr("stroke", "#fff")
-      .attr("stroke-width", 2);
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2);
 
     // Add labels to nodes
-    node.append("text")
-      .text(d => d.name.length > 15 ? d.name.substring(0, 15) + "..." : d.name)
-      .attr("text-anchor", "middle")
-      .attr("dy", "0.35em")
-      .attr("fill", "#fff")
-      .attr("font-size", d => {
+    node.append('text')
+      .text(d => d.name.length > 15 ? `${d.name.substring(0, 15)}...` : d.name)
+      .attr('text-anchor', 'middle')
+      .attr('dy', '0.35em')
+      .attr('fill', '#fff')
+      .attr('font-size', d => {
         switch(d.type) {
-          case 'portfolio': return "12px";
-          case 'program': return "11px";
-          case 'project': return "10px";
-          default: return "10px";
+          case 'portfolio': return '12px';
+          case 'program': return '11px';
+          case 'project': return '10px';
+          default: return '10px';
         }
       })
-      .attr("font-weight", "bold");
+      .attr('font-weight', 'bold');
 
     // Add tooltips
-    node.append("title")
+    node.append('title')
       .text(d => `${d.type.toUpperCase()}: ${d.name}`);
 
     // Add click handlers for detailed information
-    node.on("click", (event, d) => {
+    node.on('click', (event, d) => {
       setSelectedNode(d);
-      
+
       // Find all dependencies for this node
       const incomingDeps = links.filter(link => link.target.id === d.id);
       const outgoingDeps = links.filter(link => link.source.id === d.id);
-      
+
       // Update node details with dependency information
       const nodeWithDeps = {
         ...d,
         incomingDependencies: incomingDeps,
-        outgoingDependencies: outgoingDeps
+        outgoingDependencies: outgoingDeps,
       };
-      
+
       setSelectedNode(nodeWithDeps);
     });
 
     // Update positions on simulation tick
-    simulation.on("tick", () => {
+    simulation.on('tick', () => {
       // Constrain nodes to SVG bounds
       nodes.forEach(d => {
         d.x = Math.max(25, Math.min(width - 25, d.x));
@@ -255,13 +289,13 @@ export default function DependencyGraph({ sidebarCollapsed }) {
       });
 
       link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
 
       node
-        .attr("transform", d => `translate(${d.x},${d.y})`);
+        .attr('transform', d => `translate(${d.x},${d.y})`);
     });
 
     // Drag functions
@@ -291,28 +325,28 @@ export default function DependencyGraph({ sidebarCollapsed }) {
     if (!filtered || filtered.length === 0) return;
 
     const newInsights = [];
-    const newCriticalPaths = [];
     const newRiskMetrics = {
       highRiskDependencies: 0,
       delayedProjects: 0,
       blockedProjects: 0,
-      criticalPathLength: 0
+      criticalPathLength: 0,
     };
 
     // 1. Identify high-risk dependencies (delayed projects blocking others)
     const delayedProjects = filtered.filter(p => p.Status?.toLowerCase() === 'delayed');
     const onTrackProjects = filtered.filter(p => p.Status?.toLowerCase() === 'on track');
-    
+
     newRiskMetrics.delayedProjects = delayedProjects.length;
-    newRiskMetrics.blockedProjects = onTrackProjects.filter(p => 
-      delayedProjects.some(delayed => 
+    newRiskMetrics.blockedProjects = onTrackProjects.filter(p =>
+      delayedProjects.some(delayed =>
         // Check if this project depends on a delayed project
-        p.Program === delayed.Program || p.Portfolio === delayed.Portfolio
-      )
+        p.Program === delayed.Program || p.Portfolio === delayed.Portfolio,
+      ),
     ).length;
 
     // 2. Find critical paths (longest dependency chains)
     const projectDependencies = {};
+
     filtered.forEach(project => {
       if (!projectDependencies[project.Program]) {
         projectDependencies[project.Program] = [];
@@ -322,6 +356,7 @@ export default function DependencyGraph({ sidebarCollapsed }) {
 
     // Calculate critical path length
     let maxPathLength = 0;
+
     Object.values(projectDependencies).forEach(programProjects => {
       if (programProjects.length > maxPathLength) {
         maxPathLength = programProjects.length;
@@ -336,7 +371,7 @@ export default function DependencyGraph({ sidebarCollapsed }) {
         title: 'Delayed Projects Detected',
         message: `${delayedProjects.length} projects are delayed and may be blocking ${newRiskMetrics.blockedProjects} other projects`,
         action: 'Review delayed projects and update timelines',
-        priority: 'high'
+        priority: 'high',
       });
     }
 
@@ -346,7 +381,7 @@ export default function DependencyGraph({ sidebarCollapsed }) {
         title: 'Blocked Projects',
         message: `${newRiskMetrics.blockedProjects} projects are potentially blocked by dependencies`,
         action: 'Prioritize delayed dependencies and communicate with stakeholders',
-        priority: 'critical'
+        priority: 'critical',
       });
     }
 
@@ -356,7 +391,7 @@ export default function DependencyGraph({ sidebarCollapsed }) {
         title: 'Long Dependency Chain',
         message: `Critical path length is ${maxPathLength} projects`,
         action: 'Consider breaking down long dependency chains into smaller phases',
-        priority: 'medium'
+        priority: 'medium',
       });
     }
 
@@ -364,14 +399,14 @@ export default function DependencyGraph({ sidebarCollapsed }) {
     if (selectedPortfolio) {
       const portfolioProjects = filtered.filter(p => p.Portfolio === selectedPortfolio);
       const portfolioDelayed = portfolioProjects.filter(p => p.Status?.toLowerCase() === 'delayed');
-      
+
       if (portfolioDelayed.length > portfolioProjects.length * 0.3) {
         newInsights.push({
           type: 'warning',
           title: 'Portfolio Risk',
           message: `${Math.round((portfolioDelayed.length / portfolioProjects.length) * 100)}% of portfolio projects are delayed`,
           action: 'Review portfolio strategy and resource allocation',
-          priority: 'high'
+          priority: 'high',
         });
       }
     }
@@ -379,10 +414,11 @@ export default function DependencyGraph({ sidebarCollapsed }) {
     // 5. Status-based insights
     if (selectedStatuses.length > 0) {
       const statusCounts = {};
+
       filtered.forEach(p => {
         statusCounts[p.Status] = (statusCounts[p.Status] || 0) + 1;
       });
-      
+
       Object.entries(statusCounts).forEach(([status, count]) => {
         if (status === 'At Risk' && count > 0) {
           newInsights.push({
@@ -390,14 +426,13 @@ export default function DependencyGraph({ sidebarCollapsed }) {
             title: 'Projects At Risk',
             message: `${count} projects are at risk`,
             action: 'Implement risk mitigation strategies and increase monitoring',
-            priority: 'high'
+            priority: 'high',
           });
         }
       });
     }
 
     setInsights(newInsights);
-    setCriticalPaths(newCriticalPaths);
     setRiskMetrics(newRiskMetrics);
   }, [filtered, selectedPortfolio, selectedStatuses]);
 
@@ -407,10 +442,11 @@ export default function DependencyGraph({ sidebarCollapsed }) {
 
     // Check if we already have the same data to prevent unnecessary re-renders
     const currentDataKey = JSON.stringify(filtered.map(p => ({ Portfolio: p.Portfolio, Program: p.Program, BPM_ID: p.BPM_ID, Status: p.Status })));
+
     if (svgRef.current.lastDataKey === currentDataKey) return;
-    
+
     console.log('Generating dependency graph from projects:', filtered.length);
-    
+
     const nodes = [];
     const links = [];
     const nodeMap = new Map();
@@ -423,8 +459,9 @@ export default function DependencyGraph({ sidebarCollapsed }) {
           id: project.Portfolio,
           name: project.Portfolio,
           type: 'portfolio',
-          level: 0
+          level: 0,
         };
+
         nodes.push(portfolioNode);
         nodeMap.set(project.Portfolio, portfolioNode);
       }
@@ -436,16 +473,17 @@ export default function DependencyGraph({ sidebarCollapsed }) {
           name: project.Program,
           type: 'program',
           level: 1,
-          portfolio: project.Portfolio
+          portfolio: project.Portfolio,
         };
+
         nodes.push(programNode);
         nodeMap.set(project.Program, programNode);
-        
+
         // Link program to portfolio
         links.push({
           source: project.Portfolio,
           target: project.Program,
-          type: 'hierarchy'
+          type: 'hierarchy',
         });
       }
 
@@ -458,27 +496,31 @@ export default function DependencyGraph({ sidebarCollapsed }) {
           level: 2,
           program: project.Program,
           portfolio: project.Portfolio,
-          status: project.Status
+          status: project.Status,
         };
+
         nodes.push(projectNode);
         nodeMap.set(project.BPM_ID, projectNode);
-        
+
         // Link project to program
         links.push({
           source: project.Program,
           target: project.BPM_ID,
-          type: 'hierarchy'
+          type: 'hierarchy',
         });
       }
     });
 
     // Add realistic cross-dependencies based on project relationships
     const projectNodes = nodes.filter(n => n.type === 'project');
+
     if (projectNodes.length >= 2) {
       // Create dependencies between projects in the same program
       const programGroups = {};
+
       projectNodes.forEach(project => {
         const program = project.program;
+
         if (!programGroups[program]) {
           programGroups[program] = [];
         }
@@ -490,13 +532,13 @@ export default function DependencyGraph({ sidebarCollapsed }) {
         if (programProjects.length > 1) {
           // Sort by some criteria (e.g., project name) to create logical sequence
           const sortedProjects = programProjects.sort((a, b) => a.name.localeCompare(b.name));
-          
+
           for (let i = 0; i < sortedProjects.length - 1; i++) {
             links.push({
               source: sortedProjects[i].id,
               target: sortedProjects[i + 1].id,
               type: 'dependency',
-              description: 'Sequential dependency within program'
+              description: 'Sequential dependency within program',
             });
           }
         }
@@ -505,17 +547,18 @@ export default function DependencyGraph({ sidebarCollapsed }) {
       // Add cross-program dependencies (portfolio-level coordination)
       if (Object.keys(programGroups).length > 1) {
         const programs = Object.keys(programGroups);
+
         // Link first project of each program to create portfolio coordination
         for (let i = 0; i < programs.length - 1; i++) {
           const program1Projects = programGroups[programs[i]];
           const program2Projects = programGroups[programs[i + 1]];
-          
+
           if (program1Projects.length > 0 && program2Projects.length > 0) {
             links.push({
               source: program1Projects[0].id,
               target: program2Projects[0].id,
               type: 'dependency',
-              description: 'Portfolio coordination dependency'
+              description: 'Portfolio coordination dependency',
             });
           }
         }
@@ -523,13 +566,10 @@ export default function DependencyGraph({ sidebarCollapsed }) {
     }
 
     console.log('Final graph data:', { nodes: nodes.length, links: links.length });
-    
-    // Update graph data state
-    setGraphData({ nodes, links });
-    
+
     // Store the data key to prevent unnecessary re-renders
     svgRef.current.lastDataKey = currentDataKey;
-    
+
     // Immediately create D3 visualization
     createD3Visualization(nodes, links);
   }, [filtered, createD3Visualization]);
@@ -540,8 +580,9 @@ export default function DependencyGraph({ sidebarCollapsed }) {
       // Clean up any remaining D3 elements and simulations
       if (svgRef.current) {
         const svg = d3.select(svgRef.current);
-        svg.selectAll("*").remove();
-        
+
+        svg.selectAll('*').remove();
+
         // Stop simulation if it exists
         if (svgRef.current.simulation) {
           svgRef.current.simulation.stop();
@@ -561,161 +602,161 @@ export default function DependencyGraph({ sidebarCollapsed }) {
         selectedPortfolio={selectedPortfolio}
         selectedStatuses={selectedStatuses}
       />
-      
+
       <div className="dashboard-main-bg" style={{ marginLeft: sidebarCollapsed ? 0 : 200 }}>
         <div className="dashboard-container">
-        
-        <div className="dashboard-title">
-          <div className="title-content">
-            <h1>Dependency Graph</h1>
-            <p>Project dependency analysis and relationship visualization</p>
-          </div>
-          <div className="title-export">
-                         <ExportDropdown 
-               element={() => document.querySelector('.dashboard-container')} 
-               filename="Complete_Dependency_Graph_Dashboard"
-             />
-          </div>
-        </div>
-        
-        {/* AI Assistant Toggle - Right Side */}
-        <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
-          <button
-            className="ai-assistant-toggle-btn"
-            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
-            aria-label={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
-            title={isAIPanelOpen ? "Close AI Assistant" : "Open AI Assistant"}
-          >
-            <span className="ai-assistant-icon">🤖</span>
-          </button>
-        </div>
-        
-        <div className="filters-section">
-          <div className="filter-row">
-            <PortfolioFilter
-              portfolios={portfolios}
-              selected={selectedPortfolio}
-              onSelect={setSelectedPortfolio}
-            />
-            <StatusFilter
-              statuses={allStatuses}
-              selectedStatuses={selectedStatuses}
-              onStatusChange={setSelectedStatuses}
-            />
-          </div>
-        </div>
 
-        {/* Risk Metrics Dashboard */}
-        <div className="risk-metrics-section">
-          <div className="metrics-grid">
-            <div className="metric-card">
-              <div className="metric-value">{riskMetrics.delayedProjects || 0}</div>
-              <div className="metric-label">Delayed Projects</div>
+          <div className="dashboard-title">
+            <div className="title-content">
+              <h1>Dependency Graph</h1>
+              <p>Project dependency analysis and relationship visualization</p>
             </div>
-            <div className="metric-card">
-              <div className="metric-value">{riskMetrics.blockedProjects || 0}</div>
-              <div className="metric-label">Blocked Projects</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{riskMetrics.criticalPathLength || 0}</div>
-              <div className="metric-label">Critical Path Length</div>
-            </div>
-            <div className="metric-card">
-              <div className="metric-value">{insights.filter(i => i.priority === 'critical').length}</div>
-              <div className="metric-label">Critical Issues</div>
+            <div className="title-export">
+              <ExportDropdown
+                element={() => document.querySelector('.dashboard-container')}
+                filename="Complete_Dependency_Graph_Dashboard"
+              />
             </div>
           </div>
-        </div>
 
-        {/* Actionable Insights */}
-        {insights.length > 0 && (
-          <div className="insights-section">
-            <h3>Actionable Insights</h3>
-            <div className="insights-grid">
-              {insights.map((insight, index) => (
-                <div key={index} className={`insight-card ${insight.type} ${insight.priority}`}>
-                  <div className="insight-header">
-                    <span className="insight-type">{insight.type.toUpperCase()}</span>
-                    <span className="insight-priority">{insight.priority}</span>
-                  </div>
-                  <h4 className="insight-title">{insight.title}</h4>
-                  <p className="insight-message">{insight.message}</p>
-                  <div className="insight-action">
-                    <strong>Action:</strong> {insight.action}
-                  </div>
-                </div>
-              ))}
+          {/* AI Assistant Toggle - Right Side */}
+          <div className={`ai-assistant-toggle-container ${isAIPanelOpen ? 'hidden' : ''}`}>
+            <button
+              aria-label={isAIPanelOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
+              className="ai-assistant-toggle-btn"
+              onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+              title={isAIPanelOpen ? 'Close AI Assistant' : 'Open AI Assistant'}
+            >
+              <span className="ai-assistant-icon">🤖</span>
+            </button>
+          </div>
+
+          <div className="filters-section">
+            <div className="filter-row">
+              <PortfolioFilter
+                onSelect={setSelectedPortfolio}
+                portfolios={portfolios}
+                selected={selectedPortfolio}
+              />
+              <StatusFilter
+                onStatusChange={setSelectedStatuses}
+                selectedStatuses={selectedStatuses}
+                statuses={allStatuses}
+              />
             </div>
           </div>
-        )}
-        
-        <div className="legend-section">
-          <div className="legend-row">
-            <div className="legend-item"><span className="legend-bar portfolio"></span> Portfolio</div>
-            <div className="legend-item"><span className="legend-bar program"></span> Program</div>
-            <div className="legend-item"><span className="legend-bar project"></span> Project</div>
-            <div className="legend-item"><span className="legend-bar hierarchy"></span> Hierarchy</div>
-            <div className="legend-item"><span className="legend-bar project"></span> Dependency</div>
+
+          {/* Risk Metrics Dashboard */}
+          <div className="risk-metrics-section">
+            <div className="metrics-grid">
+              <div className="metric-card">
+                <div className="metric-value">{riskMetrics.delayedProjects || 0}</div>
+                <div className="metric-label">Delayed Projects</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value">{riskMetrics.blockedProjects || 0}</div>
+                <div className="metric-label">Blocked Projects</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value">{riskMetrics.criticalPathLength || 0}</div>
+                <div className="metric-label">Critical Path Length</div>
+              </div>
+              <div className="metric-card">
+                <div className="metric-value">{insights.filter(i => i.priority === 'critical').length}</div>
+                <div className="metric-label">Critical Issues</div>
+              </div>
+            </div>
           </div>
-        </div>
-        
-        <div className="dashboard-table-wrapper">
-          <div className="graph-container">
-            <svg ref={svgRef} width="100%" height="600"></svg>
+
+          {/* Actionable Insights */}
+          {insights.length > 0 && (
+            <div className="insights-section">
+              <h3>Actionable Insights</h3>
+              <div className="insights-grid">
+                {insights.map((insight, index) => (
+                  <div className={`insight-card ${insight.type} ${insight.priority}`} key={index}>
+                    <div className="insight-header">
+                      <span className="insight-type">{insight.type.toUpperCase()}</span>
+                      <span className="insight-priority">{insight.priority}</span>
+                    </div>
+                    <h4 className="insight-title">{insight.title}</h4>
+                    <p className="insight-message">{insight.message}</p>
+                    <div className="insight-action">
+                      <strong>Action:</strong> {insight.action}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="legend-section">
+            <div className="legend-row">
+              <div className="legend-item"><span className="legend-bar portfolio"></span> Portfolio</div>
+              <div className="legend-item"><span className="legend-bar program"></span> Program</div>
+              <div className="legend-item"><span className="legend-bar project"></span> Project</div>
+              <div className="legend-item"><span className="legend-bar hierarchy"></span> Hierarchy</div>
+              <div className="legend-item"><span className="legend-bar project"></span> Dependency</div>
+            </div>
           </div>
-        </div>
-        
-        {selectedNode && (
-          <div className="node-details">
-            <div className="node-details-header">
-              <h3>{selectedNode.name}</h3>
-              <button 
-                className="close-details-btn"
-                onClick={() => setSelectedNode(null)}
-              >
+
+          <div className="dashboard-table-wrapper">
+            <div className="graph-container">
+              <svg height="600" ref={svgRef} width="100%"></svg>
+            </div>
+          </div>
+
+          {selectedNode && (
+            <div className="node-details">
+              <div className="node-details-header">
+                <h3>{selectedNode.name}</h3>
+                <button
+                  className="close-details-btn"
+                  onClick={() => setSelectedNode(null)}
+                >
                 ×
-              </button>
-            </div>
-            <div className="node-info">
-              <p><strong>Type:</strong> {selectedNode.type}</p>
-              {selectedNode.status && <p><strong>Status:</strong> {selectedNode.status}</p>}
-              {selectedNode.portfolio && <p><strong>Portfolio:</strong> {selectedNode.portfolio}</p>}
-              {selectedNode.program && <p><strong>Program:</strong> {selectedNode.program}</p>}
-            </div>
-            
-            {selectedNode.incomingDependencies && selectedNode.incomingDependencies.length > 0 && (
-              <div className="dependencies-section">
-                <h4>Incoming Dependencies ({selectedNode.incomingDependencies.length})</h4>
-                <div className="dependency-list">
-                  {selectedNode.incomingDependencies.map((dep, index) => (
-                    <div key={index} className="dependency-item">
-                      <span className="dependency-source">{dep.source.name || dep.source}</span>
-                      <span className="dependency-arrow">→</span>
-                      <span className="dependency-type">{dep.type}</span>
-                    </div>
-                  ))}
-                </div>
+                </button>
               </div>
-            )}
-            
-            {selectedNode.outgoingDependencies && selectedNode.outgoingDependencies.length > 0 && (
-              <div className="dependencies-section">
-                <h4>Outgoing Dependencies ({selectedNode.outgoingDependencies.length})</h4>
-                <div className="dependency-list">
-                  {selectedNode.outgoingDependencies.map((dep, index) => (
-                    <div key={index} className="dependency-item">
-                      <span className="dependency-type">{dep.type}</span>
-                      <span className="dependency-arrow">→</span>
-                      <span className="dependency-target">{dep.target.name || dep.target}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="node-info">
+                <p><strong>Type:</strong> {selectedNode.type}</p>
+                {selectedNode.status && <p><strong>Status:</strong> {selectedNode.status}</p>}
+                {selectedNode.portfolio && <p><strong>Portfolio:</strong> {selectedNode.portfolio}</p>}
+                {selectedNode.program && <p><strong>Program:</strong> {selectedNode.program}</p>}
               </div>
-            )}
-          </div>
-        )}
+
+              {selectedNode.incomingDependencies && selectedNode.incomingDependencies.length > 0 && (
+                <div className="dependencies-section">
+                  <h4>Incoming Dependencies ({selectedNode.incomingDependencies.length})</h4>
+                  <div className="dependency-list">
+                    {selectedNode.incomingDependencies.map((dep, index) => (
+                      <div className="dependency-item" key={index}>
+                        <span className="dependency-source">{dep.source.name || dep.source}</span>
+                        <span className="dependency-arrow">→</span>
+                        <span className="dependency-type">{dep.type}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedNode.outgoingDependencies && selectedNode.outgoingDependencies.length > 0 && (
+                <div className="dependencies-section">
+                  <h4>Outgoing Dependencies ({selectedNode.outgoingDependencies.length})</h4>
+                  <div className="dependency-list">
+                    {selectedNode.outgoingDependencies.map((dep, index) => (
+                      <div className="dependency-item" key={index}>
+                        <span className="dependency-type">{dep.type}</span>
+                        <span className="dependency-arrow">→</span>
+                        <span className="dependency-target">{dep.target.name || dep.target}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </>
   );
 }

@@ -11,6 +11,8 @@
 8. [BudgetFinance.jsx - Financial Management](#budgetfinancejsx---financial-management)
 9. [ExportDropdown.jsx - Data Export](#exportdropdownjsx---data-export)
 10. [DepartmentDashboard.jsx - Department View](#departmentdashboardjsx---department-view)
+11. [DevOpsAnalytics.jsx - DevOps Monitoring](#devopsanalyticsjsx---devops-monitoring)
+12. [Data Loading System](#data-loading-system)
 
 ---
 
@@ -60,6 +62,7 @@ function App() {
   <Route path="/dependencies" element={<DependencyGraph sidebarCollapsed={sidebarCollapsed} />} />
   <Route path="/budget" element={<BudgetFinance sidebarCollapsed={sidebarCollapsed} />} />
   <Route path="/advanced-charts" element={<AdvancedCharts sidebarCollapsed={sidebarCollapsed} />} />
+  <Route path="/devops" element={<DevOpsAnalytics sidebarCollapsed={sidebarCollapsed} />} />
 </Routes>
 ```
 
@@ -176,7 +179,8 @@ const menuItems = [
   { path: '/departments', label: 'Departments', icon: '🏢' },
   { path: '/dependencies', label: 'Dependencies', icon: '🔗' },
   { path: '/budget', label: 'Budget', icon: '💰' },
-  { path: '/advanced-charts', label: 'Charts', icon: '📈' }
+  { path: '/advanced-charts', label: 'Charts', icon: '📈' },
+  { path: '/devops', label: 'DevOps', icon: '🚀' }
 ];
 ```
 
@@ -353,6 +357,122 @@ function AISidePanel({ isOpen, onClose, data }) {
 
 ---
 
+## DevOpsAnalytics.jsx - DevOps Organizational Dashboard
+
+**Location**: `dashboard/src/components/DevOpsAnalytics.jsx`
+**Purpose**: Organizational-level DevOps analytics for portfolio management and agile processes
+
+### Component Structure
+```javascript
+function DevOpsAnalytics() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+}
+```
+
+### Key Features
+- **Epic Management**: Organizational backlog management and epic tracking
+- **Team Velocity**: Cross-team performance and capacity analysis
+- **Backlog Overview**: Portfolio-level backlog status and distribution
+- **Sprint Planning**: Release planning and sprint coordination
+- **DevOps Maturity**: Organizational DevOps transformation assessment
+- **Cross-team Coordination**: Team dependencies and resource allocation
+
+### Data Sources
+- **Primary Data**: `devops-organizational.csv` - DevOps organizational data and agile processes
+- **Update Frequency**: Weekly updates for epics/sprints, monthly for teams/maturity
+- **Data Fields**: 20 fields including epics, teams, backlog, sprints, and maturity assessment
+
+### Organizational Views
+1. **Epic Management**: Epic status, progress, and team assignments
+2. **Team Velocity**: Team performance, capacity, and utilization rates
+3. **Backlog Overview**: Portfolio-level backlog status and priority distribution
+4. **Sprint Planning**: Sprint goals, capacity, and team coordination
+5. **DevOps Maturity**: Organizational transformation progress and dimensions
+6. **Cross-team Dependencies**: Team coordination and resource allocation
+
+### UI Components
+- **Epic Cards**: Epic status, progress, and team information
+- **Team Velocity Charts**: Team performance and capacity visualization
+- **Backlog Overview**: Status and priority distribution charts
+- **Sprint Timeline**: Sprint planning and coordination view
+- **Maturity Assessment**: DevOps transformation progress dashboard
+
+### Data Loading
+```javascript
+// Uses Promise-based data loading
+const devopsData = await loadCSV('/data/devops-organizational.csv');
+```
+
+---
+
+## Data Loading System
+
+**Location**: `dashboard/src/dataLoader.js`
+**Purpose**: Robust CSV data loading with dual API support
+
+### Architecture Overview
+The data loading system provides both Promise-based and callback-based APIs for maximum compatibility and modern development practices.
+
+### API Functions
+
+#### 1. loadCSV(filePath, callback?)
+**Purpose**: Load and parse a single CSV file
+**Returns**: Promise (if no callback) or undefined (if callback provided)
+
+```javascript
+// Promise-based usage (Recommended)
+const data = await loadCSV('/data/demo.csv');
+
+// Callback-based usage (Legacy support)
+loadCSV('/data/demo.csv', (data) => {
+  setProjects(data);
+});
+```
+
+#### 2. loadMultipleCSVs(filePaths, callback?)
+**Purpose**: Load multiple CSV files in parallel
+**Returns**: Promise (if no callback) or undefined (if callback provided)
+
+```javascript
+// Promise-based usage
+const allData = await loadMultipleCSVs([
+  '/data/demo.csv',
+  '/data/budget-statuses.csv'
+]);
+
+// Callback-based usage
+loadMultipleCSVs([
+  '/data/demo.csv',
+  '/data/budget-statuses.csv'
+], (data) => {
+  setProjects(data['/data/demo.csv']);
+  setBudgetStatuses(data['/data/budget-statuses.csv']);
+});
+```
+
+### Key Features
+- **Dual API Support**: Both modern Promise-based and legacy callback-based patterns
+- **Error Handling**: Comprehensive error handling with graceful fallbacks
+- **Performance**: Parallel loading of multiple files
+- **Browser Caching**: Leverages browser caching for static CSV files
+- **Data Validation**: Automatic CSV structure validation
+
+### Error Handling
+- **Network Errors**: Automatic retry with fallback to empty arrays
+- **CSV Parsing Errors**: Detailed error logging with graceful degradation
+- **Missing Files**: Graceful fallback to empty data structures
+- **Validation**: Automatic data structure validation
+
+### Performance Optimizations
+- **Parallel Loading**: Multiple CSV files loaded simultaneously
+- **Lazy Loading**: Data loaded only when components mount
+- **Memory Management**: Efficient data structures and cleanup
+- **Caching Strategy**: Browser-level caching for static files
+
+---
+
 ## Component Development Guidelines
 
 ### Creating New Components
@@ -380,7 +500,14 @@ function AISidePanel({ isOpen, onClose, data }) {
 - **Consistent Theming**: Use CSS variables for colors and spacing
 - **Accessibility**: Maintain proper contrast and keyboard navigation
 
+### Data Loading Best Practices
+- **Use Promise-based API**: Prefer `await loadCSV(filePath)` for new code
+- **Error Handling**: Always wrap data loading in try-catch blocks
+- **Loading States**: Implement loading indicators for better UX
+- **State Management**: Use appropriate state for loading, data, and error states
+
 ---
 
 **Last Updated**: December 2024
-**Version**: 1.0.0
+**Version**: 2.0.0
+**Data Loading System**: dataLoader.js v2.0

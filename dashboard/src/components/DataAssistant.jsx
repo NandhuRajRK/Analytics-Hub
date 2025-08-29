@@ -7,20 +7,20 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [suggestedQueries] = useState([
-    "Which portfolio has the highest budget utilization?",
-    "Show me projects at risk and their dependencies",
+    'Which portfolio has the highest budget utilization?',
+    'Show me projects at risk and their dependencies',
     "What's the budget distribution across different project statuses?",
-    "Identify potential resource conflicts in the next quarter",
-    "Which programs are performing best?",
+    'Identify potential resource conflicts in the next quarter',
+    'Which programs are performing best?',
     "What's the overall portfolio health status?",
-    "Show me delayed projects and their impact",
-    "Analyze budget allocation efficiency"
+    'Show me delayed projects and their impact',
+    'Analyze budget allocation efficiency',
   ]);
 
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -32,20 +32,21 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
     const filteredProjects = projects.filter(project => {
       if (selectedPortfolio && project.portfolio !== selectedPortfolio) return false;
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(project.status)) return false;
+
       return true;
     });
 
     // Extract portfolios, programs, and projects
     const portfolios = [...new Set(filteredProjects.map(p => p.portfolio))].map(name => ({
       id: name,
-      name: name,
-      value: filteredProjects.filter(p => p.portfolio === name).reduce((sum, p) => sum + (p.budget || 0), 0)
+      name,
+      value: filteredProjects.filter(p => p.portfolio === name).reduce((sum, p) => sum + (p.budget || 0), 0),
     }));
 
     const programs = [...new Set(filteredProjects.map(p => p.program))].map(name => ({
       id: name,
-      name: name,
-      value: filteredProjects.filter(p => p.program === name).reduce((sum, p) => sum + (p.budget || 0), 0)
+      name,
+      value: filteredProjects.filter(p => p.program === name).reduce((sum, p) => sum + (p.budget || 0), 0),
     }));
 
     const projectData = filteredProjects.map(p => ({
@@ -54,18 +55,19 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
       value: p.budget || 0,
       status: p.status,
       portfolio: p.portfolio,
-      program: p.program
+      program: p.program,
     }));
 
     // Create dependencies (simplified)
     const dependencies = [];
+
     filteredProjects.forEach(project => {
       if (project.dependencies) {
         project.dependencies.forEach(dep => {
           dependencies.push({
             source: project.id || project.name,
             target: dep,
-            type: 'dependency'
+            type: 'dependency',
           });
         });
       }
@@ -80,9 +82,9 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
         project: p.id || p.name,
         start: p.startDate,
         end: p.endDate,
-        status: p.status
+        status: p.status,
       })),
-      dependencies
+      dependencies,
     };
   };
 
@@ -90,23 +92,24 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
     if (!query.trim()) return;
 
     const userMessage = { type: 'user', content: query, timestamp: new Date() };
+
     setConversationHistory(prev => [...prev, userMessage]);
-    
+
     setIsLoading(true);
     setQuery('');
 
     try {
       const dataContext = prepareDataContext();
-      
+
       const response = await fetch('http://localhost:8000/api/llm/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          query: query,
+          query,
           data_context: dataContext,
-          current_view: 'dashboard'
+          current_view: 'dashboard',
         }),
       });
 
@@ -115,14 +118,14 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
       }
 
       const data = await response.json();
-      
+
       const assistantMessage = {
         type: 'assistant',
         content: data.response,
         insights: data.insights,
         recommendations: data.recommendations,
         data_summary: data.data_summary,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       setConversationHistory(prev => [...prev, assistantMessage]);
@@ -130,14 +133,14 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
 
     } catch (error) {
       console.error('Error querying LLM:', error);
-      
+
       const errorMessage = {
         type: 'assistant',
-        content: `I'm sorry, I encountered an error while processing your query. Please try again or check if the backend server is running.`,
+        content: 'I\'m sorry, I encountered an error while processing your query. Please try again or check if the backend server is running.',
         insights: ['Backend connection error'],
         recommendations: ['Ensure the LLM backend is running on port 8000', 'Check network connectivity'],
         data_summary: {},
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       setConversationHistory(prev => [...prev, errorMessage]);
@@ -170,7 +173,7 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
           <h3>Portfolio Data Assistant</h3>
         </div>
         <div className="assistant-actions">
-          <button 
+          <button
             className="clear-btn"
             onClick={clearConversation}
             title="Clear conversation"
@@ -186,14 +189,14 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
             <div className="welcome-icon">👋</div>
             <h4>Welcome to your Portfolio Data Assistant!</h4>
             <p>Ask me anything about your portfolio data, budgets, project statuses, and more.</p>
-            
+
             <div className="suggested-queries">
               <h5>Try asking me:</h5>
               <div className="query-chips">
                 {suggestedQueries.map((suggestedQuery, index) => (
                   <button
-                    key={index}
                     className="query-chip"
+                    key={index}
                     onClick={() => handleSuggestedQuery(suggestedQuery)}
                   >
                     {suggestedQuery}
@@ -205,7 +208,7 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
         ) : (
           <div className="conversation-messages">
             {conversationHistory.map((message, index) => (
-              <div key={index} className={`message ${message.type}`}>
+              <div className={`message ${message.type}`} key={index}>
                 <div className="message-header">
                   <span className="message-avatar">
                     {message.type === 'user' ? '👤' : '🤖'}
@@ -214,7 +217,7 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
                     {message.timestamp.toLocaleTimeString()}
                   </span>
                 </div>
-                
+
                 <div className="message-content">
                   {message.content}
                 </div>
@@ -246,7 +249,7 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
                     <h5>📊 Data Summary:</h5>
                     <div className="summary-grid">
                       {Object.entries(message.data_summary).map(([key, value]) => (
-                        <div key={key} className="summary-item">
+                        <div className="summary-item" key={key}>
                           <span className="summary-label">{key.replace(/_/g, ' ').toUpperCase()}:</span>
                           <span className="summary-value">
                             {typeof value === 'number' ? value.toLocaleString() : JSON.stringify(value)}
@@ -258,7 +261,7 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
                 )}
               </div>
             ))}
-            
+
             {isLoading && (
               <div className="message assistant loading">
                 <div className="message-header">
@@ -277,7 +280,7 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
                 </div>
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -287,22 +290,22 @@ const DataAssistant = ({ projects, selectedPortfolio, selectedStatuses }) => {
         <div className="query-input-wrapper">
           <textarea
             className="query-input"
-            value={query}
+            disabled={isLoading}
             onChange={(e) => setQuery(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask me about your portfolio data..."
             rows={2}
-            disabled={isLoading}
+            value={query}
           />
           <button
             className="ask-btn"
-            onClick={askAssistant}
             disabled={!query.trim() || isLoading}
+            onClick={askAssistant}
           >
             {isLoading ? 'Analyzing...' : 'Ask Assistant'}
           </button>
         </div>
-        
+
         <div className="input-hint">
           💡 Press Enter to send, Shift+Enter for new line
         </div>

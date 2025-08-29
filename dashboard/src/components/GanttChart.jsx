@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 
 const GanttChart = ({ project, bars, onGroupToggle, groupExpanded }) => {
   const [tooltip, setTooltip] = useState(null);
@@ -19,15 +19,15 @@ const GanttChart = ({ project, bars, onGroupToggle, groupExpanded }) => {
           {bars.length === 0 && <div className="no-data-message">No data to display</div>}
           {bars.map((bar) => (
             <div
-              key={bar.id}
-              className="gantt-bar"
-              tabIndex={0}
               aria-label={`Timeline for ${bar.label}`}
+              className="gantt-bar"
+              key={bar.id}
+              onBlur={() => setTooltip(null)}
+              onFocus={e => setTooltip({ x: e.target.getBoundingClientRect().left, y: e.target.getBoundingClientRect().bottom, bar })}
               onMouseEnter={e => setTooltip({ x: e.clientX, y: e.clientY, bar })}
               onMouseLeave={() => setTooltip(null)}
-              onFocus={e => setTooltip({ x: e.target.getBoundingClientRect().left, y: e.target.getBoundingClientRect().bottom, bar })}
-              onBlur={() => setTooltip(null)}
               style={{ left: bar.left, width: bar.width, background: bar.color }}
+              tabIndex={0}
             >
               {/* Bar content, e.g. status color */}
               {tooltip && tooltip.bar.id === bar.id && (
@@ -45,7 +45,7 @@ const GanttChart = ({ project, bars, onGroupToggle, groupExpanded }) => {
 
       {/* Add group collapse/expand support via props */}
       {typeof onGroupToggle === 'function' && (
-        <button onClick={onGroupToggle} className="collapse-expand-btn">
+        <button className="collapse-expand-btn" onClick={onGroupToggle}>
           {groupExpanded ? 'Collapse Group' : 'Expand Group'}
         </button>
       )}
@@ -54,4 +54,4 @@ const GanttChart = ({ project, bars, onGroupToggle, groupExpanded }) => {
   );
 };
 
-export default GanttChart; 
+export default GanttChart;

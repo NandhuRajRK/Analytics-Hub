@@ -1,14 +1,12 @@
-import React from 'react';
-
 export default function PortfolioFilter({ portfolios, selected, onSelect }) {
   return (
     <div className="portfolio-filter">
       <label htmlFor="portfolio-select">Portfolio: </label>
       <select
-        id="portfolio-select"
         className="portfolio-select"
-        value={selected || 'All'}
+        id="portfolio-select"
         onChange={e => onSelect(e.target.value)}
+        value={selected || 'All'}
       >
         <option value="All">All</option>
         {portfolios.map(p => (
@@ -17,4 +15,4 @@ export default function PortfolioFilter({ portfolios, selected, onSelect }) {
       </select>
     </div>
   );
-} 
+}

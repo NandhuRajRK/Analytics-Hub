@@ -1,29 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './AISidePanel.css';
 
 const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedStatuses }) => {
   const [query, setQuery] = useState('');
-  const [response, setResponse] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [suggestedQueries] = useState([
-    "Which portfolio has the highest budget utilization?",
-    "Show me projects at risk and their dependencies",
-    "What's the budget distribution across different project statuses?",
-    "Identify potential resource conflicts in the next quarter",
-    "Which programs are performing best?",
-    "What's the overall portfolio health status?",
-    "Show me delayed projects and their impact",
-    "Analyze budget allocation efficiency"
-  ]);
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -33,6 +22,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
   // Handle file uploads
   const handleFileUpload = async (event) => {
     const files = Array.from(event.target.files);
+
     if (files.length === 0) return;
 
     setIsUploading(true);
@@ -54,7 +44,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           'application/vnd.ms-excel',
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         ];
 
         if (!allowedTypes.includes(file.type)) {
@@ -64,15 +54,15 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
 
         // Read file content
         const content = await readFileContent(file);
-        
+
         const document = {
           id: Date.now() + Math.random(),
           name: file.name,
           type: file.type,
           size: file.size,
-          content: content,
+          content,
           uploadedAt: new Date(),
-          lastUsed: null
+          lastUsed: null,
         };
 
         newDocuments.push(document);
@@ -96,11 +86,11 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
   const readFileContent = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
-          let content = e.target.result;
-          
+          const content = e.target.result;
+
           // For text files, use as-is
           if (file.type === 'text/plain' || file.type === 'text/csv') {
             resolve(content);
@@ -121,9 +111,9 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
           reject(error);
         }
       };
-      
+
       reader.onerror = reject;
-      
+
       if (file.type === 'text/plain' || file.type === 'text/csv') {
         reader.readAsText(file);
       } else {
@@ -132,30 +122,26 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
     });
   };
 
-  // Remove uploaded document
-  const removeDocument = (documentId) => {
-    setUploadedDocuments(prev => prev.filter(doc => doc.id !== documentId));
-  };
-
   // Prepare data context for LLM including uploaded documents
   const prepareDataContext = () => {
     const filteredProjects = projects.filter(project => {
       if (selectedPortfolio && project.portfolio !== selectedPortfolio) return false;
       if (selectedStatuses.length > 0 && !selectedStatuses.includes(project.status)) return false;
+
       return true;
     });
 
     // Extract portfolios, programs, and projects
     const portfolios = [...new Set(filteredProjects.map(p => p.portfolio))].map(name => ({
       id: name,
-      name: name,
-      value: filteredProjects.filter(p => p.portfolio === name).reduce((sum, p) => sum + (p.budget || 0), 0)
+      name,
+      value: filteredProjects.filter(p => p.portfolio === name).reduce((sum, p) => sum + (p.budget || 0), 0),
     }));
 
     const programs = [...new Set(filteredProjects.map(p => p.program))].map(name => ({
       id: name,
-      name: name,
-      value: filteredProjects.filter(p => p.program === name).reduce((sum, p) => sum + (p.budget || 0), 0)
+      name,
+      value: filteredProjects.filter(p => p.program === name).reduce((sum, p) => sum + (p.budget || 0), 0),
     }));
 
     const projectData = filteredProjects.map(p => ({
@@ -164,18 +150,19 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
       value: p.budget || 0,
       status: p.status,
       portfolio: p.portfolio,
-      program: p.program
+      program: p.program,
     }));
 
     // Create dependencies (simplified)
     const dependencies = [];
+
     filteredProjects.forEach(project => {
       if (project.dependencies) {
         project.dependencies.forEach(dep => {
           dependencies.push({
             source: project.id || project.name,
             target: dep,
-            type: 'dependency'
+            type: 'dependency',
           });
         });
       }
@@ -187,7 +174,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
       name: doc.name,
       type: doc.type,
       content: doc.content,
-      uploadedAt: doc.uploadedAt.toISOString()
+      uploadedAt: doc.uploadedAt.toISOString(),
     }));
 
     return {
@@ -199,10 +186,10 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
         project: p.id || p.name,
         start: p.startDate,
         end: p.endDate,
-        status: p.status
+        status: p.status,
       })),
       dependencies,
-      uploadedDocuments: documentContext
+      uploadedDocuments: documentContext,
     };
   };
 
@@ -210,31 +197,32 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
     if (!query.trim()) return;
 
     const userMessage = { type: 'user', content: query, timestamp: new Date() };
+
     setConversationHistory(prev => [...prev, userMessage]);
-    
+
     setIsLoading(true);
     setQuery('');
 
     try {
       const dataContext = prepareDataContext();
-      
+
       // Update lastUsed timestamp for uploaded documents
       if (uploadedDocuments.length > 0) {
         setUploadedDocuments(prev => prev.map(doc => ({
           ...doc,
-          lastUsed: new Date()
+          lastUsed: new Date(),
         })));
       }
-      
+
       const response = await fetch('http://localhost:8000/api/llm/query', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          query: query,
+          query,
           data_context: dataContext,
-          current_view: 'dashboard'
+          current_view: 'dashboard',
         }),
       });
 
@@ -243,29 +231,28 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
       }
 
       const data = await response.json();
-      
+
       const assistantMessage = {
         type: 'assistant',
         content: data.response,
         insights: data.insights,
         recommendations: data.recommendations,
         data_summary: data.data_summary,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       setConversationHistory(prev => [...prev, assistantMessage]);
-      setResponse(data);
 
     } catch (error) {
       console.error('Error querying LLM:', error);
-      
+
       const errorMessage = {
         type: 'assistant',
-        content: `I'm sorry, I encountered an error while processing your query. Please try again or check if the backend server is running.`,
+        content: 'I\'m sorry, I encountered an error while processing your query. Please try again or check if the backend server is running.',
         insights: ['Backend connection error'],
         recommendations: ['Ensure the LLM backend is running on port 8000', 'Check network connectivity'],
         data_summary: {},
-        timestamp: new Date()
+        timestamp: new Date(),
       };
 
       setConversationHistory(prev => [...prev, errorMessage]);
@@ -283,7 +270,6 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
 
   const clearConversation = () => {
     setConversationHistory([]);
-    setResponse(null);
   };
 
   const clearDocuments = () => {
@@ -292,12 +278,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
 
   const clearAll = () => {
     setConversationHistory([]);
-    setResponse(null);
     setUploadedDocuments([]);
-  };
-
-  const handleSuggestedQuery = (suggestedQuery) => {
-    setQuery(suggestedQuery);
   };
 
   // Close panel when clicking outside
@@ -333,8 +314,21 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
   return (
     <>
       {/* Backdrop */}
-      {isOpen && <div className="ai-side-panel-backdrop" onClick={onClose} />}
-      
+      {isOpen && (
+        <div
+          className="ai-side-panel-backdrop"
+          onClick={onClose}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              onClose();
+            }
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close panel"
+        />
+      )}
+
       {/* Side Panel */}
       <div className={`ai-side-panel ${isOpen ? 'open' : ''}`}>
         <div className="ai-side-panel-header">
@@ -343,21 +337,21 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
             <h3>AI Assistant</h3>
           </div>
           <div className="ai-side-panel-actions">
-            <button 
+            <button
               className="clear-btn"
               onClick={clearConversation}
               title="Clear conversation"
             >
               💬
             </button>
-            <button 
+            <button
               className="clear-docs-btn"
               onClick={clearAll}
               title="Clear everything"
             >
               🗑️
             </button>
-            <button 
+            <button
               className="close-btn"
               onClick={onClose}
               title="Close panel"
@@ -374,39 +368,39 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
               <div className="welcome-emoji">👋</div>
               <h2>Welcome to your AI Assistant!</h2>
               <p>Ask me anything about your portfolio data, budgets, project statuses, and more.</p>
-              
+
               <div className="suggested-questions-section">
-                <label htmlFor="question-dropdown" className="suggested-questions-label">Try asking me:</label>
-                <select 
-                  id="question-dropdown"
+                <label className="suggested-questions-label" htmlFor="question-dropdown">Try asking me:</label>
+                <select
                   className="question-dropdown"
+                  defaultValue=""
+                  id="question-dropdown"
                   onChange={(e) => {
                     if (e.target.value) {
                       setQuery(e.target.value);
                       e.target.value = ''; // Reset to default
                     }
                   }}
-                  defaultValue=""
                 >
-                  <option value="" disabled>Select a question...</option>
+                  <option disabled value="">Select a question...</option>
                   <option value="Which portfolio has the highest budget utilization?">Which portfolio has the highest budget utilization?</option>
                   <option value="Show me projects at risk and their dependencies">Show me projects at risk and their dependencies</option>
-                  <option value="What's the budget distribution across different project statuses?">What's the budget distribution across different project statuses?</option>
+                  <option value="What&apos;s the budget distribution across different project statuses?">What&apos;s the budget distribution across different project statuses?</option>
                   <option value="Identify potential resource conflicts in the next quarter">Identify potential resource conflicts in the next quarter</option>
                   <option value="Which programs are performing best?">Which programs are performing best?</option>
-                  <option value="What's the overall portfolio health status?">What's the overall portfolio health status?</option>
+                  <option value="What&apos;s the overall portfolio health status?">What&apos;s the overall portfolio health status?</option>
                   <option value="Show me delayed projects and their impact">Show me delayed projects and their impact</option>
                   <option value="Analyze budget allocation efficiency">Analyze budget allocation efficiency</option>
                 </select>
               </div>
             </div>
           )}
-          
+
           {/* Conversation Messages */}
           {conversationHistory.length > 0 && (
             <div className="conversation-messages">
               {conversationHistory.map((message, index) => (
-                <div key={index} className={`message ${message.type}`}>
+                <div className={`message ${message.type}`} key={index}>
                   <div className="message-header">
                     <span className="message-type">
                       {message.type === 'user' ? '👤 You' : '🤖 AI Assistant'}
@@ -420,7 +414,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
                   </div>
                 </div>
               ))}
-              
+
               {isLoading && (
                 <div className="message assistant loading">
                   <div className="message-header">
@@ -439,7 +433,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -460,7 +454,7 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
               </div>
               <div className="documents-preview">
                 {uploadedDocuments.slice(0, 3).map((doc, index) => (
-                  <div key={index} className="document-preview-item" title={doc.name}>
+                  <div className="document-preview-item" key={index} title={doc.name}>
                     {doc.name}
                   </div>
                 ))}
@@ -478,38 +472,38 @@ const AISidePanel = ({ isOpen, onClose, projects, selectedPortfolio, selectedSta
                 <div className="input-field-container">
                   {/* Hidden file input for document upload */}
                   <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
                     accept=".txt,.csv,.pdf,.doc,.docx,.xls,.xlsx"
+                    multiple
                     onChange={handleFileUpload}
+                    ref={fileInputRef}
                     style={{ display: 'none' }}
+                    type="file"
                   />
-                  
+
                   {/* Upload button that triggers file input */}
                   <button
                     className="plus-icon-btn"
-                    onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading}
+                    onClick={() => fileInputRef.current?.click()}
                     title="Upload documents"
                   >
                     {isUploading ? '📤' : '+'}
                   </button>
-                  
+
                   <textarea
                     className="centered-query-input"
-                    value={query}
+                    disabled={isLoading}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Ask anything"
                     rows={1}
-                    disabled={isLoading}
+                    value={query}
                   />
-                  
+
                   <button
                     className="send-icon-btn"
-                    onClick={askAssistant}
                     disabled={!query.trim() || isLoading}
+                    onClick={askAssistant}
                     title="Send message"
                   >
                     {isLoading ? '⏳' : '↗️'}

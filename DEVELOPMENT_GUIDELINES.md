@@ -77,6 +77,210 @@ export default ComponentName;
 - **Component Memoization**: Use `React.memo` for components that don't need frequent re-renders
 - **Lazy Loading**: Implement lazy loading for large components or data
 
+## 📊 **Data Loading Best Practices**
+
+### **1. Using the Data Loader System**
+The project uses a robust data loading system (`dataLoader.js`) that provides both Promise-based and callback-based APIs.
+
+#### **Promise-based API (Recommended for new code)**
+```javascript
+import { loadCSV, loadMultipleCSVs } from '../dataLoader';
+
+function MyComponent() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Single file loading
+        const projectData = await loadCSV('/data/demo.csv');
+        setData(projectData);
+        
+        // Multiple files loading
+        const allData = await loadMultipleCSVs([
+          '/data/demo.csv',
+          '/data/budget-statuses.csv',
+          '/data/status-colors.csv'
+        ]);
+        
+        // Process combined data
+        setData(allData);
+        
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Component rendering logic...
+}
+```
+
+#### **Callback-based API (Legacy support)**
+```javascript
+import { loadCSV } from '../dataLoader';
+
+function LegacyComponent() {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    loadCSV('/data/demo.csv', (csvData) => {
+      setData(csvData);
+    });
+  }, []);
+
+  // Component rendering logic...
+}
+```
+
+### **2. Error Handling Patterns**
+Always implement proper error handling for data loading operations:
+
+```javascript
+// Good: Comprehensive error handling
+const loadData = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    
+    const data = await loadCSV('/data/example.csv');
+    
+    if (data && Array.isArray(data) && data.length > 0) {
+      setData(data);
+    } else {
+      setError('No data found in file');
+    }
+    
+  } catch (err) {
+    console.error('Error loading data:', err);
+    setError(err.message || 'Failed to load data');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// Avoid: No error handling
+const loadData = async () => {
+  const data = await loadCSV('/data/example.csv'); // ❌ No error handling
+  setData(data);
+};
+```
+
+### **3. Loading State Management**
+Implement proper loading states for better user experience:
+
+```javascript
+function DataComponent() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Loading state
+  if (loading) {
+    return <div className="loading-spinner">Loading data...</div>;
+  }
+
+  // Error state
+  if (error) {
+    return <div className="error-message">Error: {error}</div>;
+  }
+
+  // No data state
+  if (!data || data.length === 0) {
+    return <div className="no-data">No data available</div>;
+  }
+
+  // Success state
+  return (
+    <div className="data-display">
+      {/* Render your data */}
+    </div>
+  );
+}
+```
+
+### **4. Data Validation**
+Always validate loaded data before using it:
+
+```javascript
+const validateData = (data) => {
+  if (!data || !Array.isArray(data)) {
+    throw new Error('Data must be an array');
+  }
+  
+  if (data.length === 0) {
+    throw new Error('Data array is empty');
+  }
+  
+  // Validate required fields
+  const requiredFields = ['id', 'name', 'status'];
+  const firstItem = data[0];
+  
+  for (const field of requiredFields) {
+    if (!(field in firstItem)) {
+      throw new Error(`Missing required field: ${field}`);
+    }
+  }
+  
+  return data;
+};
+
+// Usage
+const loadData = async () => {
+  try {
+    const rawData = await loadCSV('/data/example.csv');
+    const validatedData = validateData(rawData);
+    setData(validatedData);
+  } catch (err) {
+    setError(err.message);
+  }
+};
+```
+
+### **5. Performance Considerations**
+- **Lazy Loading**: Load data only when components mount
+- **Parallel Loading**: Use `loadMultipleCSVs` for multiple files
+- **Caching**: Leverage browser caching for static CSV files
+- **Memory Management**: Clean up data when components unmount
+
+```javascript
+useEffect(() => {
+  let isMounted = true;
+  
+  const loadData = async () => {
+    try {
+      const data = await loadCSV('/data/example.csv');
+      
+      // Only update state if component is still mounted
+      if (isMounted) {
+        setData(data);
+      }
+    } catch (err) {
+      if (isMounted) {
+        setError(err.message);
+      }
+    }
+  };
+
+  loadData();
+
+  // Cleanup function
+  return () => {
+    isMounted = false;
+  };
+}, []);
+```
+
 ## 🛠 **Development Tools**
 
 ### **1. Code Quality Tools**
@@ -124,6 +328,7 @@ dashboard/
 │   ├── components/          # React components
 │   │   ├── Dashboard.jsx
 │   │   ├── SidebarMenu.jsx
+│   │   ├── DevOpsAnalytics.jsx
 │   │   └── ...
 │   ├── hooks/              # Custom React hooks
 │   │   ├── usePortfolioData.js
@@ -134,10 +339,14 @@ dashboard/
 │   ├── constants/          # Application constants
 │   │   ├── dashboardConstants.js
 │   │   └── ...
-│   ├── data/               # Data files and loaders
-│   │   └── dataLoader.js
+│   ├── dataLoader.js       # CSV data loading system
 │   └── App.js              # Main application
-├── public/                 # Static assets
+├── public/
+│   └── data/               # CSV data files
+│       ├── demo.csv
+│       ├── devops-metrics.csv
+│       ├── budget-statuses.csv
+│       └── ...
 ├── .eslintrc.js           # ESLint configuration
 ├── .prettierrc            # Prettier configuration
 └── package.json           # Dependencies and scripts
@@ -147,7 +356,7 @@ dashboard/
 
 ### **1. Error Handling**
 - **Error Boundaries**: Wrap components in error boundaries for graceful error handling
-- **Try-Catch**: Use try-catch blocks for async operations
+- **Try-Catch**: Use try-catch blocks for async operations, especially data loading
 - **User Feedback**: Provide clear error messages to users
 - **Fallbacks**: Implement fallback UI for error states
 
@@ -177,6 +386,7 @@ dashboard/
 - [ ] Code is properly formatted (`npm run format`)
 - [ ] Components have proper PropTypes or TypeScript types
 - [ ] Error handling is implemented where appropriate
+- [ ] Data loading uses proper error handling and loading states
 - [ ] Accessibility considerations are addressed
 - [ ] Performance implications are considered
 - [ ] Tests are written for new functionality
@@ -186,6 +396,7 @@ dashboard/
 - [ ] Code is readable and well-documented
 - [ ] Logic is clear and efficient
 - [ ] Error cases are handled appropriately
+- [ ] Data loading follows established patterns
 - [ ] Security considerations are addressed
 - [ ] Performance impact is acceptable
 - [ ] Accessibility requirements are met
@@ -218,6 +429,11 @@ dashboard/
 - [React Developer Tools](https://chrome.google.com/webstore/detail/react-developer-tools/fmkadmapgofadopljbjfkapdkoienihi)
 - [ESLint Playground](https://eslint.org/demo/)
 - [Prettier Playground](https://prettier.io/playground/)
+
+### **Data Loading Resources**
+- [PapaParse Documentation](https://www.papaparse.com/)
+- [Fetch API Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API)
+- [Promise Documentation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
 
 ---
 

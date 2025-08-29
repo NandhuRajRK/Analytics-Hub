@@ -8,9 +8,10 @@
 5. [Endpoints](#endpoints)
 6. [Error Handling](#error-handling)
 7. [LLM Integration](#llm-integration)
-8. [Examples](#examples)
-9. [Rate Limiting](#rate-limiting)
-10. [Testing](#testing)
+8. [Frontend Data Loading](#frontend-data-loading)
+9. [Examples](#examples)
+10. [Rate Limiting](#rate-limiting)
+11. [Testing](#testing)
 
 ---
 
@@ -287,6 +288,72 @@ class QueryResponse(BaseModel):
 
 ---
 
+## Frontend Data Loading
+
+The frontend uses a robust data loading system (`dataLoader.js`) that provides both Promise-based and callback-based APIs for loading CSV data files.
+
+### Data Loading Architecture
+
+#### **Promise-based API (Recommended)**
+```javascript
+// Modern async/await pattern
+const devopsData = await loadCSV('/data/devops-metrics.csv');
+setData(devopsData);
+
+// Multiple files in parallel
+const allData = await loadMultipleCSVs([
+  '/data/demo.csv',
+  '/data/budget-statuses.csv',
+  '/data/status-colors.csv'
+]);
+```
+
+#### **Callback-based API (Legacy Support)**
+```javascript
+// Traditional callback pattern
+loadCSV('/data/demo.csv', (data) => {
+  setProjects(data);
+});
+
+// Multiple files with callback
+loadMultipleCSVs([
+  '/data/demo.csv',
+  '/data/budget-statuses.csv'
+], (data) => {
+  setProjects(data['/data/demo.csv']);
+  setBudgetStatuses(data['/data/budget-statuses.csv']);
+});
+```
+
+### Available Data Files
+
+| File | Purpose | Update Frequency | Fields |
+|------|---------|------------------|---------|
+| `demo.csv` | Main project portfolio data | Weekly | 25 fields (projects, budgets, timelines) |
+| `devops-metrics.csv` | DevOps performance metrics | Daily | 11 fields (deployment, lead time, success rates) |
+| `budget-statuses.csv` | Budget status definitions | Monthly | Status codes, colors, descriptions |
+| `status-colors.csv` | Project status definitions | Monthly | Status codes, colors, descriptions |
+| `rd-categories.csv` | R&D category definitions | Monthly | Categories, descriptions, metadata |
+| `milestone-phases.csv` | Project milestone phases | Monthly | Phase definitions, durations |
+| `time-periods.csv` | Time period definitions | Quarterly | Periods, date ranges |
+
+### Error Handling
+
+The data loader includes comprehensive error handling:
+- **Network errors**: Automatic retry with fallback to empty arrays
+- **CSV parsing errors**: Detailed error logging with graceful degradation
+- **Missing files**: Graceful fallback to empty data structures
+- **Validation**: Automatic data structure validation
+
+### Performance Features
+
+- **Parallel loading**: Multiple CSV files loaded simultaneously
+- **Caching**: Browser-level caching for static CSV files
+- **Lazy loading**: Data loaded only when components are mounted
+- **Memory optimization**: Efficient data structures and cleanup
+
+---
+
 ## Error Handling
 
 ### HTTP Status Codes
@@ -335,6 +402,15 @@ class QueryResponse(BaseModel):
 {
   "detail": "Error processing query: LLM service unavailable",
   "error_type": "llm_error",
+  "timestamp": "2024-12-25T10:30:00Z"
+}
+```
+
+#### 4. Frontend Data Loading Errors
+```json
+{
+  "detail": "Error loading CSV file /data/devops-metrics.csv: callback is not a function",
+  "error_type": "data_loader_error",
   "timestamp": "2024-12-25T10:30:00Z"
 }
 ```
@@ -482,6 +558,54 @@ Content-Type: application/json
 }
 ```
 
+### Example 3: Frontend Data Loading Integration
+
+**Frontend Component**:
+```javascript
+import { loadCSV } from '../dataLoader';
+
+function DevOpsAnalytics() {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const devopsData = await loadCSV('/data/devops-metrics.csv');
+        setData(devopsData);
+      } catch (error) {
+        console.error('Error loading DevOps data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Component rendering logic...
+}
+```
+
+**Backend API Call**:
+```javascript
+// Send loaded data to backend for AI analysis
+const analyzeData = async () => {
+  const response = await fetch('/api/llm/query', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: "Analyze my DevOps metrics and identify improvement areas",
+      data_context: { projects: data },
+      current_view: "devops"
+    })
+  });
+  
+  const analysis = await response.json();
+  // Handle AI analysis results...
+};
+```
+
 ---
 
 ## Rate Limiting
@@ -545,6 +669,12 @@ Use the provided CSV files in `dashboard/public/data/` for comprehensive testing
 - **Throughput**: Test with multiple concurrent requests
 - **Memory Usage**: Monitor during extended usage
 
+### Frontend Testing
+- **Data Loading**: Test CSV file loading with various file sizes
+- **Error Handling**: Test network failures and malformed CSV files
+- **Performance**: Test loading multiple CSV files simultaneously
+- **Browser Compatibility**: Test across different browsers and devices
+
 ---
 
 ## Development Notes
@@ -571,9 +701,16 @@ The API includes comprehensive logging for:
 - Error conditions
 - Performance metrics
 
+### Frontend Integration
+- **Data Loading**: Use `loadCSV()` for single files, `loadMultipleCSVs()` for multiple files
+- **Error Handling**: Implement try-catch blocks around data loading operations
+- **State Management**: Use React state for loading, data, and error states
+- **Performance**: Load data only when components mount, implement loading indicators
+
 ---
 
 **Last Updated**: December 2024
-**Version**: 1.0.0
+**Version**: 2.0.0
 **API Base**: FastAPI
+**Frontend Data Loading**: dataLoader.js v2.0
 **Documentation Format**: OpenAPI 3.0 compatible

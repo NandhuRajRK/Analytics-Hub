@@ -1,9 +1,9 @@
 /**
  * Dashboard Constants
- * 
+ *
  * Centralized configuration and constants for the portfolio dashboard.
  * This improves maintainability by avoiding magic numbers and hardcoded values.
- * 
+ *
  * NOTE: This file contains core dashboard constants. For specialized constants, see:
  * - chartConstants.js: Chart-specific settings (margins, dimensions, colors)
  * - dataConstants.js: Data formats, statuses, API endpoints
@@ -29,10 +29,10 @@ export const TIMELINE_CONFIG = {
   // Breakpoints for timeline label filtering (in days)
   LONG_TIMELINE_DAYS: 1000,    // ~3 years - show every 2nd month
   MEDIUM_TIMELINE_DAYS: 500,   // ~1.5 years - show all months
-  
+
   // Future buffer for timeline extension (in months)
   FUTURE_BUFFER_MONTHS: 6,
-  
+
   // Mobile breakpoint for responsive design
   MOBILE_BREAKPOINT: 700,
 };
@@ -45,7 +45,7 @@ export const GANTT_CONFIG = {
   // Bar heights
   PREVIOUS_BAR_HEIGHT: 6,
   CURRENT_BAR_HEIGHT: 12,
-  
+
   // Z-index values for layering
   Z_INDEX: {
     PREVIOUS_BAR: 1,
@@ -53,7 +53,7 @@ export const GANTT_CONFIG = {
     TODAY_LINE: 5,
     TOOLTIP: 10,
   },
-  
+
   // Today line styling
   TODAY_LINE: {
     WIDTH: '3px',
@@ -69,7 +69,7 @@ export const GANTT_CONFIG = {
 export const UI_CONFIG = {
   // Hover detection area for collapsed sidebar
   SIDEBAR_HOVER_AREA: 24,
-  
+
   // Tooltip styling
   TOOLTIP: {
     MIN_WIDTH: 220,
@@ -78,7 +78,7 @@ export const UI_CONFIG = {
     BORDER_RADIUS: 8,
     SHADOW: '0 4px 16px #0001',
   },
-  
+
   // Indentation for nested rows
   INDENTATION: {
     PROGRAM_LEVEL: 24,
@@ -115,7 +115,7 @@ export const ERROR_MESSAGES = {
 export const DEBUG_CONFIG = {
   // Enable/disable console logging
   ENABLE_LOGGING: process.env.NODE_ENV === 'development',
-  
+
   // Log levels
   LOG_LEVELS: {
     INFO: 'info',

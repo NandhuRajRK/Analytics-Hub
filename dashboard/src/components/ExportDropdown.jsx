@@ -1,5 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { exportChart, isElementReady, waitForElement } from '../utils/exportUtils';
+import { useState, useRef, useEffect } from 'react';
+
+import { exportChart, waitForElement } from '../utils/exportUtils';
+
 import './ExportDropdown.css';
 
 const ExportDropdown = ({ element, filename, className = '', disabled = false }) => {
@@ -17,12 +19,14 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
     };
 
     document.addEventListener('mousedown', handleClickOutside);
+
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleExport = async (format) => {
     if (!element) {
       setExportStatus('Error: No element specified for export');
+
       return;
     }
 
@@ -38,10 +42,10 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
         console.warn('Element timeout, but attempting export anyway:', timeoutError.message);
         // Continue with export even if timeout occurs
       }
-      
+
       // Perform the export
       const result = await exportChart(element, filename, format);
-      
+
       if (result.success) {
         setExportStatus(`Successfully exported to ${format.toUpperCase()}`);
         // Clear success message after 3 seconds
@@ -51,9 +55,10 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
       }
     } catch (error) {
       console.error('Export failed:', error);
-      
+
       // Provide more helpful error messages
       let errorMessage = error.message;
+
       if (error.message.includes('Unable to find element in cloned iframe')) {
         errorMessage = 'Chart capture failed - please ensure the chart is fully loaded and try again';
       } else if (error.message.includes('Screenshot capture failed')) {
@@ -61,7 +66,7 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
       } else if (error.message.includes('Element not found')) {
         errorMessage = 'Chart element not found - please ensure you are on the correct page';
       }
-      
+
       setExportStatus(`Export failed: ${errorMessage}`);
     } finally {
       setIsExporting(false);
@@ -73,15 +78,15 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
     { format: 'word', label: 'Word/HTML', icon: '📝' },
     { format: 'png', label: 'PNG Image', icon: '🖼️' },
     { format: 'jpeg', label: 'JPEG Image', icon: '📷' },
-    { format: 'svg', label: 'SVG Vector', icon: '🔷' }
+    { format: 'svg', label: 'SVG Vector', icon: '🔷' },
   ];
 
   return (
     <div className={`export-dropdown ${className}`} ref={dropdownRef}>
       <button
         className={`export-dropdown-button ${disabled || isExporting ? 'disabled' : ''}`}
-        onClick={() => !disabled && !isExporting && setIsOpen(!isOpen)}
         disabled={disabled || isExporting}
+        onClick={() => !disabled && !isExporting && setIsOpen(!isOpen)}
         title={isExporting ? 'Export in progress...' : 'Export chart'}
       >
         {isExporting ? (
@@ -95,8 +100,8 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
             Export
           </>
         )}
-        <svg className={`dropdown-arrow ${isOpen ? 'open' : ''}`} width="12" height="12" viewBox="0 0 24 24" fill="none">
-          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg className={`dropdown-arrow ${isOpen ? 'open' : ''}`} fill="none" height="12" viewBox="0 0 24 24" width="12">
+          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
         </svg>
       </button>
 
@@ -104,10 +109,10 @@ const ExportDropdown = ({ element, filename, className = '', disabled = false })
         <div className="export-dropdown-menu">
           {exportOptions.map((option) => (
             <button
-              key={option.format}
               className="export-option"
-              onClick={() => handleExport(option.format)}
               disabled={isExporting}
+              key={option.format}
+              onClick={() => handleExport(option.format)}
               title={`Export as ${option.label}`}
             >
               <span className="export-icon">{option.icon}</span>

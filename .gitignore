@@ -178,3 +178,31 @@ backend/uploads/
 .env.production
 secrets.json
 config.json
+
+# Additional development files
+*.tsbuildinfo
+.eslintcache
+.prettierignore
+.prettierrc.js
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Package manager locks (uncomment if you want to ignore these)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+*.code-workspace
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
