@@ -9,7 +9,7 @@
  * - Cross-team agile process overview
  * - DevOps portfolio alignment and strategic initiatives
  * - Team coordination and dependency management
- * - DevOps maturity assessment and transformation tracking
+
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -134,201 +134,7 @@ function NotificationCenter({ notifications, onDismiss, onMarkRead }) {
   );
 }
 
-// Advanced Search & Filtering Component
-function AdvancedSearch({ onSearch, onFilterChange, searchHistory, savedFilters }) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchMode, setSearchMode] = useState('simple'); // simple, boolean, wildcard
-  const [showAdvanced, setShowAdvanced] = useState(false);
-  const [booleanOperator, setBooleanOperator] = useState('AND');
-  const [wildcardPattern, setWildcardPattern] = useState('');
-  
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      onSearch({
-        query: searchQuery,
-        mode: searchMode,
-        operator: booleanOperator,
-        pattern: wildcardPattern
-      });
-    }
-  };
-  
-  const handleQuickFilter = (filter) => {
-    onFilterChange(filter);
-  };
-  
-  const handleSaveFilter = () => {
-    if (searchQuery.trim()) {
-      const filterName = prompt('Enter a name for this filter:');
-      if (filterName) {
-        // This would typically save to localStorage or backend
-        console.log('Saving filter:', filterName, searchQuery);
-      }
-    }
-  };
-  
-  return (
-    <div className="advanced-search-section">
-      <div className="search-header">
-        <h3>Advanced Search & Filtering</h3>
-        <div className="search-controls">
-          <button 
-            className={`mode-btn ${searchMode === 'simple' ? 'active' : ''}`}
-            onClick={() => setSearchMode('simple')}
-          >
-            Simple
-          </button>
-          <button 
-            className={`mode-btn ${searchMode === 'boolean' ? 'active' : ''}`}
-            onClick={() => setSearchMode('boolean')}
-          >
-            Boolean
-          </button>
-          <button 
-            className={`mode-btn ${searchMode === 'wildcard' ? 'active' : ''}`}
-            onClick={() => setSearchMode('wildcard')}
-          >
-            Wildcard
-          </button>
-        </div>
-      </div>
-      
-      <div className="search-input-section">
-        {searchMode === 'simple' && (
-          <div className="simple-search">
-            <input
-              type="text"
-              placeholder="Search epics, stories, teams, descriptions..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input-advanced"
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <button className="search-btn" onClick={handleSearch}>
-              🔍 Search
-            </button>
-          </div>
-        )}
-        
-        {searchMode === 'boolean' && (
-          <div className="boolean-search">
-            <div className="boolean-inputs">
-              <input
-                type="text"
-                placeholder="First search term"
-                className="search-input-advanced"
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              <select 
-                value={booleanOperator} 
-                onChange={(e) => setBooleanOperator(e.target.value)}
-                className="operator-select"
-              >
-                <option value="AND">AND</option>
-                <option value="OR">OR</option>
-                <option value="NOT">NOT</option>
-              </select>
-              <input
-                type="text"
-                placeholder="Second search term"
-                className="search-input-advanced"
-                onChange={(e) => setWildcardPattern(e.target.value)}
-              />
-            </div>
-            <button className="search-btn" onClick={handleSearch}>
-              🔍 Boolean Search
-            </button>
-          </div>
-        )}
-        
-        {searchMode === 'wildcard' && (
-          <div className="wildcard-search">
-            <div className="wildcard-help">
-              <span>Use * for multiple characters, ? for single character</span>
-            </div>
-            <div className="wildcard-inputs">
-              <input
-                type="text"
-                placeholder="e.g., *portal*, team?, *2024*"
-                value={wildcardPattern}
-                onChange={(e) => setWildcardPattern(e.target.value)}
-                className="search-input-advanced"
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              />
-              <button className="search-btn" onClick={handleSearch}>
-                🔍 Wildcard Search
-              </button>
-            </div>
-          </div>
-        )}
-        
-        <div className="search-actions">
-          <button className="action-btn save-btn" onClick={handleSaveFilter}>
-            💾 Save Filter
-          </button>
-          <button 
-            className="action-btn advanced-btn"
-            onClick={() => setShowAdvanced(!showAdvanced)}
-          >
-            {showAdvanced ? '🔽 Hide' : '🔼 Show'} Advanced
-          </button>
-        </div>
-      </div>
-      
-      {showAdvanced && (
-        <div className="advanced-options">
-          <div className="quick-filters">
-            <h4>Quick Filters</h4>
-            <div className="filter-buttons">
-              <button 
-                className="quick-filter-btn"
-                onClick={() => handleQuickFilter({ type: 'high-priority' })}
-              >
-                🚨 High Priority
-              </button>
-              <button 
-                className="quick-filter-btn"
-                onClick={() => handleQuickFilter({ type: 'blocked-items' })}
-              >
-                🚫 Blocked Items
-              </button>
-              <button 
-                className="quick-filter-btn"
-                onClick={() => handleQuickFilter({ type: 'overdue' })}
-              >
-                ⏰ Overdue
-              </button>
-              <button 
-                className="quick-filter-btn"
-                onClick={() => handleQuickFilter({ type: 'active-sprints' })}
-              >
-                🏃 Active Sprints
-              </button>
-              <button 
-                className="quick-filter-btn"
-                onClick={() => handleQuickFilter({ type: 'planning-phase' })}
-              >
-                📋 Planning Phase
-              </button>
-            </div>
-          </div>
-          
-          <div className="search-history">
-            <h4>Recent Searches</h4>
-            <div className="history-list">
-              {searchHistory.slice(0, 5).map((search, index) => (
-                <div key={index} className="history-item">
-                  <span className="history-query">{search.query}</span>
-                  <span className="history-time">{search.time}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
+
 
 // Status Filter Component
 function StatusFilter({ statuses, selectedStatuses, onStatusChange, label = "Status" }) {
@@ -962,7 +768,7 @@ function BurndownChart({ sprint }) {
               <div
                 key={index}
                 className={`chart-point ${day.isToday ? 'today' : ''}`}
-                style={{
+                  style={{
                   left: `${(day.day / burndownData.totalDays) * 100}%`,
                   top: `${100 - (day.points / maxPoints) * 100}%`
                 }}
@@ -971,10 +777,10 @@ function BurndownChart({ sprint }) {
               >
                 <div className="point-tooltip">
                   Day {day.day}: {day.remaining.toFixed(1)} pts remaining
-                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
+        </div>
           
           <div className="chart-x-axis">
             {Array.from({ length: Math.min(burndownData.totalDays + 1, 8) }, (_, i) => {
@@ -990,15 +796,15 @@ function BurndownChart({ sprint }) {
         </div>
       </div>
       
-      <div className="chart-legend">
-        <div className="legend-item">
+        <div className="chart-legend">
+          <div className="legend-item">
           <div className="legend-color actual"></div>
           <span>Actual Progress</span>
-        </div>
-        <div className="legend-item">
+          </div>
+          <div className="legend-item">
           <div className="legend-color ideal"></div>
           <span>Ideal Burndown</span>
-        </div>
+          </div>
         <div className="legend-item">
           <div className="legend-color today"></div>
           <span>Today</span>
@@ -1113,7 +919,7 @@ function PerformanceAnalytics({ teams, epics, backlog, sprints }) {
       description: 'Velocity vs. capacity utilization'
     }
   ];
-  
+
   return (
     <div className="performance-analytics-section">
       <div className="analytics-header">
@@ -1753,10 +1559,10 @@ function ResourceManagement({ teams, epics, backlog, sprints }) {
                             width: `${data.utilizationRate}%`,
                             backgroundColor: status.color
                           }}
-                        ></div>
+                ></div>
                         <span className="bar-value">{data.utilizationRate}%</span>
-                      </div>
-                    </div>
+              </div>
+            </div>
                     <div className="capacity-details">
                       <div className="detail-row">
                         <span>Team Size:</span>
@@ -1887,380 +1693,7 @@ function ResourceManagement({ teams, epics, backlog, sprints }) {
     </div>
   );
 }
-
-/**
- * Risk Management & Compliance Component
- * Shows risk assessment, compliance tracking, and mitigation strategies
- */
-function RiskManagement({ teams, epics, backlog, sprints }) {
-  const [selectedRiskLevel, setSelectedRiskLevel] = useState('all'); // all, high, medium, low
-  const [selectedCategory, setSelectedCategory] = useState('all'); // all, technical, operational, security, compliance
-  
-  const riskData = useMemo(() => {
-    const risks = [];
-    
-    // Generate risk data based on current data
-    teams.forEach(team => {
-      const teamEpics = epics.filter(epic => epic.Team === team.Title);
-      const teamBacklog = backlog.filter(item => item.Team === team.Title);
-      
-      // Technical risks
-      const technicalDebt = teamBacklog.filter(item => 
-        item.Type === 'Technical Debt' || item.Description?.includes('refactor')
-      ).length;
-      if (technicalDebt > 2) {
-        risks.push({
-          id: `tech-${team.Title}`,
-          title: 'Technical Debt Accumulation',
-          description: `Team ${team.Title} has ${technicalDebt} technical debt items`,
-          category: 'technical',
-          level: technicalDebt > 5 ? 'high' : 'medium',
-          team: team.Title,
-          impact: 'Code quality degradation, increased maintenance costs',
-          probability: technicalDebt > 5 ? 'high' : 'medium',
-          mitigation: 'Plan refactoring sprints, allocate 20% capacity to technical debt',
-          status: 'active',
-          lastUpdated: new Date().toISOString().split('T')[0]
-        });
-      }
-      
-      // Operational risks
-      const blockedItems = teamBacklog.filter(item => item.Status === 'Blocked').length;
-      if (blockedItems > 3) {
-        risks.push({
-          id: `op-${team.Title}`,
-          title: 'High Blocked Items',
-          description: `Team ${team.Title} has ${blockedItems} blocked work items`,
-          category: 'operational',
-          level: blockedItems > 6 ? 'high' : 'medium',
-          team: team.Title,
-          impact: 'Delayed delivery, reduced team velocity',
-          probability: 'high',
-          mitigation: 'Daily blocker review, escalate to stakeholders',
-          status: 'active',
-          lastUpdated: new Date().toISOString().split('T')[0]
-        });
-      }
-      
-      // Security risks
-      if (teamEpics.some(epic => epic.Description?.includes('security') || epic.Description?.includes('vulnerability'))) {
-        risks.push({
-          id: `sec-${team.Title}`,
-          title: 'Security Vulnerabilities',
-          description: `Team ${team.Title} has security-related epics`,
-          category: 'security',
-          level: 'high',
-          team: team.Title,
-          impact: 'Potential security breaches, compliance violations',
-          probability: 'medium',
-          mitigation: 'Prioritize security fixes, conduct security reviews',
-          status: 'active',
-          lastUpdated: new Date().toISOString().split('T')[0]
-        });
-      }
-      
-      // Compliance risks
-      if (teamEpics.some(epic => epic.Description?.includes('compliance') || epic.Description?.includes('audit'))) {
-        risks.push({
-          id: `comp-${team.Title}`,
-          title: 'Compliance Requirements',
-          description: `Team ${team.Title} has compliance-related epics`,
-          category: 'compliance',
-          level: 'medium',
-          team: team.Title,
-          impact: 'Regulatory violations, legal consequences',
-          probability: 'medium',
-          mitigation: 'Regular compliance reviews, documentation updates',
-          status: 'active',
-          lastUpdated: new Date().toISOString().split('T')[0]
-        });
-      }
-    });
-    
-    // Add some general organizational risks
-    const totalEpics = epics.length;
-    const activeEpics = epics.filter(epic => epic.Status === 'Active').length;
-    const completionRate = (activeEpics / totalEpics) * 100;
-    
-    if (completionRate < 30) {
-      risks.push({
-        id: 'org-delivery',
-        title: 'Low Delivery Rate',
-        description: `Only ${Math.round(completionRate)}% of epics are active`,
-        category: 'operational',
-        level: 'high',
-        team: 'Organization',
-        impact: 'Missed deadlines, stakeholder dissatisfaction',
-        probability: 'high',
-        mitigation: 'Review epic prioritization, increase team capacity',
-        status: 'active',
-        lastUpdated: new Date().toISOString().split('T')[0]
-      });
-    }
-    
-    return risks;
-  }, [teams, epics, backlog]);
-  
-  const filteredRisks = useMemo(() => {
-    return riskData.filter(risk => {
-      const levelMatch = selectedRiskLevel === 'all' || risk.level === selectedRiskLevel;
-      const categoryMatch = selectedCategory === 'all' || risk.category === selectedCategory;
-      return levelMatch && categoryMatch;
-    });
-  }, [riskData, selectedRiskLevel, selectedCategory]);
-  
-  const riskSummary = useMemo(() => {
-    const total = riskData.length;
-    const high = riskData.filter(r => r.level === 'high').length;
-    const medium = riskData.filter(r => r.level === 'medium').length;
-    const low = riskData.filter(r => r.level === 'low').length;
-    
-    const byCategory = {
-      technical: riskData.filter(r => r.category === 'technical').length,
-      operational: riskData.filter(r => r.category === 'operational').length,
-      security: riskData.filter(r => r.category === 'security').length,
-      compliance: riskData.filter(r => r.category === 'compliance').length
-    };
-    
-    return { total, high, medium, low, byCategory };
-  }, [riskData]);
-  
-  const getRiskColor = (level) => {
-    switch (level) {
-      case 'high': return '#ef4444';
-      case 'medium': return '#f59e0b';
-      case 'low': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-  
-  const getRiskIcon = (level) => {
-    switch (level) {
-      case 'high': return '🔴';
-      case 'medium': return '🟡';
-      case 'low': return '🟢';
-      default: return '⚪';
-    }
-  };
-  
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'technical': return '⚙️';
-      case 'operational': return '📊';
-      case 'security': return '🔒';
-      case 'compliance': return '📋';
-      default: return '❓';
-    }
-  };
-  
-  return (
-    <div className="risk-management-section">
-      <div className="risk-header">
-        <h2>Risk Management & Compliance</h2>
-        <div className="risk-controls">
-          <div className="risk-filter">
-            <label>Risk Level:</label>
-            <select 
-              value={selectedRiskLevel} 
-              onChange={(e) => setSelectedRiskLevel(e.target.value)}
-              className="risk-select"
-            >
-              <option value="all">All Levels</option>
-              <option value="high">High Risk</option>
-              <option value="medium">Medium Risk</option>
-              <option value="low">Low Risk</option>
-            </select>
-          </div>
-          <div className="risk-filter">
-            <label>Category:</label>
-            <select 
-              value={selectedCategory} 
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="risk-select"
-            >
-              <option value="all">All Categories</option>
-              <option value="technical">Technical</option>
-              <option value="operational">Operational</option>
-              <option value="security">Security</option>
-              <option value="compliance">Compliance</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      <div className="risk-overview">
-        <div className="overview-metric">
-          <div className="metric-icon">⚠️</div>
-          <div className="metric-content">
-            <div className="metric-value">{riskSummary.total}</div>
-            <div className="metric-label">Total Risks</div>
-          </div>
-        </div>
-        <div className="overview-metric">
-          <div className="metric-icon">🔴</div>
-          <div className="metric-content">
-            <div className="metric-value">{riskSummary.high}</div>
-            <div className="metric-label">High Risk</div>
-          </div>
-        </div>
-        <div className="overview-metric">
-          <div className="metric-icon">🟡</div>
-          <div className="metric-content">
-            <div className="metric-value">{riskSummary.medium}</div>
-            <div className="metric-label">Medium Risk</div>
-          </div>
-        </div>
-        <div className="overview-metric">
-          <div className="metric-icon">🟢</div>
-          <div className="metric-content">
-            <div className="metric-value">{riskSummary.low}</div>
-            <div className="metric-label">Low Risk</div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="risk-categories">
-        <h3>Risk Distribution by Category</h3>
-        <div className="category-grid">
-          {Object.entries(riskSummary.byCategory).map(([category, count]) => (
-            <div key={category} className="category-card">
-              <div className="category-icon">{getCategoryIcon(category)}</div>
-              <div className="category-content">
-                <div className="category-name">{category.charAt(0).toUpperCase() + category.slice(1)}</div>
-                <div className="category-count">{count} risks</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="risk-list">
-        <h3>Risk Assessment & Mitigation</h3>
-        <div className="risks-grid">
-          {filteredRisks.map(risk => (
-            <div key={risk.id} className={`risk-card ${risk.level}`}>
-              <div className="risk-header-card">
-                <div className="risk-title">
-                  <div className="risk-icon" style={{ color: getRiskColor(risk.level) }}>
-                    {getRiskIcon(risk.level)}
-                  </div>
-                  <h4>{risk.title}</h4>
-                </div>
-                <div className="risk-level" style={{ color: getRiskColor(risk.level) }}>
-                  {risk.level.toUpperCase()}
-                </div>
-              </div>
-              
-              <div className="risk-details">
-                <div className="detail-item">
-                  <span className="detail-label">Category:</span>
-                  <span className="detail-value">
-                    {getCategoryIcon(risk.category)} {risk.category}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Team:</span>
-                  <span className="detail-value">{risk.team}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Probability:</span>
-                  <span className="detail-value">{risk.probability}</span>
-                </div>
-                <div className="detail-item">
-                  <span className="detail-label">Last Updated:</span>
-                  <span className="detail-value">{risk.lastUpdated}</span>
-                </div>
-              </div>
-              
-              <div className="risk-description">
-                <p>{risk.description}</p>
-              </div>
-              
-              <div className="risk-impact">
-                <div className="impact-label">Impact:</div>
-                <div className="impact-text">{risk.impact}</div>
-              </div>
-              
-              <div className="risk-mitigation">
-                <div className="mitigation-label">Mitigation Strategy:</div>
-                <div className="mitigation-text">{risk.mitigation}</div>
-              </div>
-              
-              <div className="risk-actions">
-                <button className="action-btn primary">Update Risk</button>
-                <button className="action-btn secondary">View Details</button>
-                <button className="action-btn success">Mark Resolved</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="compliance-section">
-        <h3>Compliance & Governance</h3>
-        <div className="compliance-grid">
-          <div className="compliance-card">
-            <div className="compliance-icon">📋</div>
-            <div className="compliance-content">
-              <h4>Audit Readiness</h4>
-              <p>Current compliance score: 85%</p>
-              <div className="compliance-bar">
-                <div className="compliance-fill" style={{ width: '85%' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className="compliance-card">
-            <div className="compliance-icon">🔒</div>
-            <div className="compliance-content">
-              <h4>Security Standards</h4>
-              <p>Security compliance: 92%</p>
-              <div className="compliance-bar">
-                <div className="compliance-fill" style={{ width: '92%' }}></div>
-              </div>
-            </div>
-          </div>
-          <div className="compliance-card">
-            <div className="compliance-icon">⚖️</div>
-            <div className="compliance-content">
-              <h4>Regulatory Compliance</h4>
-              <p>Regulatory score: 78%</p>
-              <div className="compliance-bar">
-                <div className="compliance-fill" style={{ width: '78%' }}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="risk-recommendations">
-        <h3>Risk Management Recommendations</h3>
-        <div className="recommendations-list">
-          <div className="recommendation-item">
-            <div className="recommendation-icon">🎯</div>
-            <div className="recommendation-content">
-              <h4>Prioritize High-Risk Items</h4>
-              <p>Focus on resolving high-risk items first to reduce overall exposure</p>
-            </div>
-          </div>
-          <div className="recommendation-item">
-            <div className="recommendation-icon">📅</div>
-            <div className="recommendation-content">
-              <h4>Regular Risk Reviews</h4>
-              <p>Schedule weekly risk assessment meetings with stakeholders</p>
-            </div>
-          </div>
-          <div className="recommendation-item">
-            <div className="recommendation-icon">📊</div>
-            <div className="recommendation-content">
-              <h4>Risk Metrics Dashboard</h4>
-              <p>Implement real-time risk monitoring and alerting</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+ 
 
 /**
  * DORA Metrics Component
@@ -2270,53 +1703,66 @@ function DORAMetrics({ teams, epics, backlog, sprints }) {
   const [selectedMetric, setSelectedMetric] = useState('deployment');
   
   const calculateDORAMetrics = useMemo(() => {
-    // Deployment Frequency (deployments per day)
-    const deploymentFrequency = teams.length > 0 ? 
-      Math.round((teams.reduce((sum, team) => sum + (parseInt(team.StoryPoints) || 0), 0) / 30) * 100) / 100 : 0;
+    // Deployment Frequency - based on actual Azure DevOps deployment data
+    // This would come from Release Management, Pipeline runs, or Deployment records
+    const deploymentFrequency = epics.length > 0 ? 
+      epics.reduce((sum, epic) => {
+        // Assuming each epic has deployment frequency data
+        const deployments = parseInt(epic.DeploymentsPerWeek) || 0;
+        return sum + deployments;
+      }, 0) / epics.length : 0;
     
-    // Lead Time (time from commit to deployment)
+    // Lead Time - based on Azure DevOps work item tracking
+    // Time from work item creation to completion
     const leadTime = epics.length > 0 ? 
-      Math.round(epics.reduce((sum, epic) => {
-        if (epic.StartDate && epic.EndDate) {
-          const start = new Date(epic.StartDate);
-          const end = new Date(epic.EndDate);
-          return sum + Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+      epics.reduce((sum, epic) => {
+        if (epic.CreatedDate && epic.CompletedDate) {
+          const created = new Date(epic.CreatedDate);
+          const completed = new Date(epic.CompletedDate);
+          return sum + Math.ceil((completed - created) / (1000 * 60 * 60 * 24));
         }
         return sum;
-      }, 0) / epics.length) : 0;
+      }, 0) / epics.length : 0;
     
-    // Mean Time to Recovery (MTTR) - simulated based on team performance
-    const mttr = teams.length > 0 ? 
-      Math.round(teams.reduce((sum, team) => {
-        const velocity = parseInt(team.StoryPoints) || 0;
-        const capacity = 50; // Default capacity
-        const utilization = velocity / capacity;
-        // Higher utilization = lower MTTR (better performance)
-        return sum + Math.max(1, Math.round(24 / (utilization + 0.1)));
-      }, 0) / teams.length) : 0;
+    // Mean Time to Recovery (MTTR) - based on incident/outage data
+    // This would come from Azure DevOps work items marked as incidents
+    const mttr = epics.length > 0 ? 
+      epics.reduce((sum, epic) => {
+        // Assuming epics have MTTR data from incident tracking
+        const incidentTime = parseInt(epic.IncidentResolutionTime) || 0; // in hours
+        return sum + incidentTime;
+      }, 0) / epics.length : 0;
     
-    // Change Failure Rate (percentage of deployments causing failures)
-    const changeFailureRate = backlog.length > 0 ? 
-      Math.round((backlog.filter(item => item.Status === 'Blocked').length / backlog.length) * 100) : 0;
+    // Change Failure Rate - based on failed deployments/rollbacks
+    // This would come from Release Management and Pipeline data
+    const changeFailureRate = epics.length > 0 ? 
+      epics.reduce((sum, epic) => {
+        const totalDeployments = parseInt(epic.TotalDeployments) || 0;
+        const failedDeployments = parseInt(epic.FailedDeployments) || 0;
+        if (totalDeployments > 0) {
+          return sum + (failedDeployments / totalDeployments);
+        }
+        return sum;
+      }, 0) / epics.length * 100 : 0;
     
     return {
-      deploymentFrequency,
-      leadTime,
-      mttr,
-      changeFailureRate
+      deploymentFrequency: Math.round(deploymentFrequency * 100) / 100,
+      leadTime: Math.round(leadTime),
+      mttr: Math.round(mttr),
+      changeFailureRate: Math.round(changeFailureRate * 100) / 100
     };
   }, [teams, epics, backlog, sprints]);
   
   const getMetricColor = (metric, value) => {
     switch (metric) {
       case 'deployment':
-        return value >= 1 ? '#22c55e' : value >= 0.5 ? '#f59e0b' : '#ef4444';
+        return value >= 3 ? '#22c55e' : value >= 1 ? '#f59e0b' : '#ef4444';
       case 'leadTime':
-        return value <= 7 ? '#22c55e' : value <= 14 ? '#f59e0b' : '#ef4444';
+        return value <= 14 ? '#22c55e' : value <= 30 ? '#f59e0b' : '#ef4444';
       case 'mttr':
-        return value <= 4 ? '#22c55e' : value <= 8 ? '#f59e0b' : '#ef4444';
+        return value <= 8 ? '#22c55e' : value <= 24 ? '#f59e0b' : '#ef4444';
       case 'changeFailure':
-        return value <= 5 ? '#22c55e' : value <= 15 ? '#f59e0b' : '#ef4444';
+        return value <= 10 ? '#22c55e' : value <= 25 ? '#f59e0b' : '#ef4444';
       default:
         return '#6b7280';
     }
@@ -2325,13 +1771,13 @@ function DORAMetrics({ teams, epics, backlog, sprints }) {
   const getMetricStatus = (metric, value) => {
     switch (metric) {
       case 'deployment':
-        return value >= 1 ? 'Elite' : value >= 0.5 ? 'High' : 'Low';
+        return value >= 3 ? 'Elite' : value >= 1 ? 'High' : 'Low';
       case 'leadTime':
-        return value <= 7 ? 'Elite' : value <= 14 ? 'High' : 'Low';
+        return value <= 14 ? 'Elite' : value <= 30 ? 'High' : 'Low';
       case 'mttr':
-        return value <= 4 ? 'Elite' : value <= 8 ? 'High' : 'Low';
+        return value <= 8 ? 'Elite' : value <= 24 ? 'High' : 'Low';
       case 'changeFailure':
-        return value <= 5 ? 'Elite' : value <= 15 ? 'High' : 'Low';
+        return value <= 10 ? 'Elite' : value <= 25 ? 'High' : 'Low';
       default:
         return 'Unknown';
     }
@@ -2342,33 +1788,33 @@ function DORAMetrics({ teams, epics, backlog, sprints }) {
       key: 'deployment',
       label: 'Deployment Frequency',
       value: calculateDORAMetrics.deploymentFrequency,
-      unit: 'deployments/day',
-      description: 'How often code is deployed to production',
-      target: '≥1 deployment/day'
+      unit: 'deployments/week',
+      description: 'Average deployments per week across all epics',
+      target: '≥3 deployments/week'
     },
     {
       key: 'leadTime',
       label: 'Lead Time',
       value: calculateDORAMetrics.leadTime,
       unit: 'days',
-      description: 'Time from code commit to production deployment',
-      target: '≤7 days'
+      description: 'Time from work item creation to completion',
+      target: '≤14 days'
     },
     {
       key: 'mttr',
       label: 'Mean Time to Recovery',
       value: calculateDORAMetrics.mttr,
       unit: 'hours',
-      description: 'Time to restore service after failure',
-      target: '≤4 hours'
+      description: 'Average time to resolve incidents/outages',
+      target: '≤8 hours'
     },
     {
       key: 'changeFailure',
       label: 'Change Failure Rate',
       value: calculateDORAMetrics.changeFailureRate,
       unit: '%',
-      description: 'Percentage of deployments causing failures',
-      target: '≤5%'
+      description: 'Percentage of failed deployments requiring rollback',
+      target: '≤10%'
     }
   ];
 
@@ -2547,56 +1993,7 @@ function SprintPlanning({ sprints }) {
   );
 }
 
-/**
- * DevOps Maturity Component
- * Shows organizational DevOps maturity assessment
- */
-function DevOpsMaturity({ maturity }) {
-  const getMaturityColor = (level) => {
-    switch (level?.toLowerCase()) {
-      case 'expert': return STATUS_COLORS.COMPLETED;
-      case 'advanced': return STATUS_COLORS.ON_TRACK;
-      case 'intermediate': return STATUS_COLORS.AT_RISK;
-      case 'beginner': return STATUS_COLORS.DELAYED;
-      default: return STATUS_COLORS.DEFAULT;
-    }
-  };
 
-  return (
-    <div className="devops-maturity-section">
-      <h3>DevOps Maturity Assessment</h3>
-      <div className="maturity-overview">
-        <div className="overall-score">
-          <div className="score-number">{maturity.length > 0 ? Math.round(maturity.reduce((sum, item) => sum + (parseInt(item.Progress) || 0), 0) / maturity.length) : 0}</div>
-          <div className="score-label">Average Maturity Score</div>
-          <div className="score-level">Overall Assessment</div>
-        </div>
-      </div>
-      
-      <div className="maturity-dimensions">
-        {maturity.map((item, index) => (
-          <div className="maturity-dimension" key={index}>
-            <div className="dimension-header">
-              <div className="dimension-name">{item.Title || 'Unknown Assessment'}</div>
-              <div className="dimension-score">{item.Progress || 0}/100</div>
-            </div>
-            <div className="dimension-bar">
-              <div 
-                className="dimension-fill"
-                style={{
-                  width: `${item.Progress || 0}%`,
-                  backgroundColor: getMaturityColor(item.Status)
-                }}
-              ></div>
-            </div>
-            <div className="dimension-level">{item.Status || 'Unknown'}</div>
-            <div className="dimension-description">{item.Description || 'No description available'}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 /**
  * Main DevOps Analytics Component
@@ -2614,6 +2011,11 @@ export default function DevOpsAnalytics({ sidebarCollapsed }) {
   const [selectedPriorities, setSelectedPriorities] = useState([]);
   const [selectedTeams, setSelectedTeams] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [searchMode, setSearchMode] = useState('simple');
+  const [booleanTerms, setBooleanTerms] = useState({ term1: '', term2: '' });
+  const [booleanOperator, setBooleanOperator] = useState('AND');
+  const [wildcardPattern, setWildcardPattern] = useState('');
   const [searchHistory, setSearchHistory] = useState([
     { query: 'portal redesign', time: '2 min ago' },
     { query: 'high priority', time: '5 min ago' },
@@ -2693,12 +2095,12 @@ export default function DevOpsAnalytics({ sidebarCollapsed }) {
   }, []);
 
   // Advanced search handlers
-  const handleAdvancedSearch = (searchData) => {
-    const { query, mode, operator, pattern } = searchData;
+  const handleAdvancedSearch = (query, mode) => {
+    if (!query.trim()) return;
     
     // Add to search history
     const newSearch = {
-      query: mode === 'boolean' ? `${query} ${operator} ${pattern}` : query,
+      query: query,
       time: 'Just now'
     };
     setSearchHistory(prev => [newSearch, ...prev.slice(0, 4)]);
@@ -2706,13 +2108,55 @@ export default function DevOpsAnalytics({ sidebarCollapsed }) {
     // Apply search logic based on mode
     if (mode === 'boolean') {
       // Boolean search logic
-      console.log('Boolean search:', query, operator, pattern);
+      const searchQuery = `${booleanTerms.term1} ${booleanOperator} ${booleanTerms.term2}`;
+      setSearchQuery(searchQuery);
+      console.log('Boolean search:', searchQuery);
     } else if (mode === 'wildcard') {
       // Wildcard search logic
-      console.log('Wildcard search:', pattern);
+      setSearchQuery(wildcardPattern);
+      console.log('Wildcard search:', wildcardPattern);
     } else {
       // Simple search
       setSearchQuery(query);
+    }
+  };
+  
+  const handleQuickFilter = (filter) => {
+    switch (filter) {
+      case 'high-priority':
+        setSelectedPriorities(['High']);
+        break;
+      case 'blocked':
+        setSelectedEpicStatuses(['Blocked']);
+        setSelectedBacklogStatuses(['Blocked']);
+        break;
+      case 'active-sprints':
+        setSelectedSprintStatuses(['Active']);
+        break;
+      case 'overloaded-teams':
+        setSelectedTeamStatuses(['Overloaded']);
+        break;
+      default:
+        break;
+    }
+  };
+  
+  const handleSaveFilter = () => {
+    const filterName = prompt('Enter a name for this filter:');
+    if (filterName && searchQuery.trim()) {
+      const newFilter = {
+        name: filterName,
+        query: searchQuery,
+        filters: {
+          epicStatuses: selectedEpicStatuses,
+          teamStatuses: selectedTeamStatuses,
+          backlogStatuses: selectedBacklogStatuses,
+          sprintStatuses: selectedSprintStatuses,
+          priorities: selectedPriorities,
+          teams: selectedTeams
+        }
+      };
+      setSavedFilters(prev => [newFilter, ...prev.slice(0, 4)]);
     }
   };
   
@@ -2993,8 +2437,8 @@ export default function DevOpsAnalytics({ sidebarCollapsed }) {
                     onDismiss={handleNotificationDismiss}
                     onMarkRead={handleNotificationMarkRead}
                   />
-                  <div className="header-export">
-                    <ExportDropdown
+        <div className="header-export">
+          <ExportDropdown
                       element={() => document.querySelector('.devops-container')}
                       filename="DevOps_Organizational_Dashboard"
                       additionalData={{
@@ -3018,67 +2462,230 @@ export default function DevOpsAnalytics({ sidebarCollapsed }) {
                       }}
                     />
                   </div>
-                </div>
+        </div>
       </div>
 
-        {/* Advanced Search & Filtering */}
-        <AdvancedSearch
-          onSearch={handleAdvancedSearch}
-          onFilterChange={handleFilterChange}
-          searchHistory={searchHistory}
-          savedFilters={savedFilters}
-        />
-
-        {/* Filter Controls */}
-        <div className="filter-section">
-          <div className="filter-header">
-            <div className="search-container">
+        {/* Clean Search & Filter */}
+        <div className="clean-search-section">
+          <div className="search-main">
+            <div className="search-input-container">
               <input
                 type="text"
-                placeholder="Search epics, stories, teams..."
+                placeholder="Search epics, teams, backlog items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
+                onKeyPress={(e) => e.key === 'Enter' && handleAdvancedSearch(searchQuery, 'simple')}
               />
+              <button 
+                className="search-btn"
+                onClick={() => handleAdvancedSearch(searchQuery, 'simple')}
+              >
+                Search
+              </button>
+            </div>
+            
+            <div className="quick-filters">
+              <span className="quick-filters-label">Quick filters:</span>
+              <button 
+                className="quick-filter-btn"
+                onClick={() => handleQuickFilter('high-priority')}
+              >
+                High Priority
+              </button>
+              <button 
+                className="quick-filter-btn"
+                onClick={() => handleQuickFilter('blocked')}
+              >
+                Blocked
+              </button>
+              <button 
+                className="quick-filter-btn"
+                onClick={() => handleQuickFilter('active-sprints')}
+              >
+                Active Sprints
+              </button>
+              <button 
+                className="advanced-toggle-btn"
+                onClick={() => setShowAdvancedSearch(!showAdvancedSearch)}
+              >
+                {showAdvancedSearch ? 'Hide Advanced' : 'Advanced Options'}
+                <span className="toggle-icon">{showAdvancedSearch ? '▼' : '▶'}</span>
+              </button>
             </div>
           </div>
+          
+          {showAdvancedSearch && (
+            <div className="advanced-search-dropdown">
+              <div className="advanced-search-content">
+                <div className="search-modes">
+                  <div className="mode-selector">
+                    <label>Search Mode:</label>
+                    <div className="mode-buttons">
+                      <button 
+                        className={`mode-btn ${searchMode === 'simple' ? 'active' : ''}`}
+                        onClick={() => setSearchMode('simple')}
+                      >
+                        Simple
+                      </button>
+                      <button 
+                        className={`mode-btn ${searchMode === 'boolean' ? 'active' : ''}`}
+                        onClick={() => setSearchMode('boolean')}
+                      >
+                        Boolean
+                      </button>
+                      <button 
+                        className={`mode-btn ${searchMode === 'wildcard' ? 'active' : ''}`}
+                        onClick={() => setSearchMode('wildcard')}
+                      >
+                        Wildcard
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {searchMode === 'boolean' && (
+                    <div className="boolean-inputs">
+                      <div className="boolean-row">
+                        <input
+                          type="text"
+                          placeholder="First term"
+                          value={booleanTerms.term1}
+                          onChange={(e) => setBooleanTerms({...booleanTerms, term1: e.target.value})}
+                          className="boolean-input"
+                        />
+                        <select 
+                          value={booleanOperator} 
+                          onChange={(e) => setBooleanOperator(e.target.value)}
+                          className="operator-select"
+                        >
+                          <option value="AND">AND</option>
+                          <option value="OR">OR</option>
+                          <option value="NOT">NOT</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Second term"
+                          value={booleanTerms.term2}
+                          onChange={(e) => setBooleanTerms({...booleanTerms, term2: e.target.value})}
+                          className="boolean-input"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  
+                  {searchMode === 'wildcard' && (
+                    <div className="wildcard-inputs">
+                      <div className="wildcard-help">
+                        Use * for multiple characters, ? for single character
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Pattern (e.g., *devops*, test?)"
+                        value={wildcardPattern}
+                        onChange={(e) => setWildcardPattern(e.target.value)}
+                        className="wildcard-input"
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="advanced-actions">
+                    <button 
+                      className="action-btn primary"
+                      onClick={() => handleAdvancedSearch(searchQuery, searchMode)}
+                    >
+                      Search
+                    </button>
+                    <button 
+                      className="action-btn secondary"
+                      onClick={() => handleSaveFilter()}
+                    >
+                      Save Filter
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="search-history">
+                  <h5>Recent Searches</h5>
+                  <div className="history-list">
+                    {searchHistory.slice(-3).map((item, index) => (
+                      <div key={index} className="history-item">
+                        <span className="history-query">{item.query}</span>
+                        <span className="history-time">{item.time}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="filter-controls">
-            <StatusFilter
-              statuses={['Active', 'Planning', 'Completed', 'Blocked']}
-              selectedStatuses={selectedEpicStatuses}
-              onStatusChange={setSelectedEpicStatuses}
-              label="Epic Status"
-            />
-            <StatusFilter
-              statuses={['Active', 'Planning', 'Completed']}
-              selectedStatuses={selectedTeamStatuses}
-              onStatusChange={setSelectedTeamStatuses}
-              label="Team Status"
-            />
-            <StatusFilter
-              statuses={['Ready', 'In Progress', 'Completed', 'Blocked']}
-              selectedStatuses={selectedBacklogStatuses}
-              onStatusChange={setSelectedBacklogStatuses}
-              label="Backlog Status"
-            />
-            <StatusFilter
-              statuses={['Active', 'Planning', 'Completed']}
-              selectedStatuses={selectedSprintStatuses}
-              onStatusChange={setSelectedSprintStatuses}
-              label="Sprint Status"
-            />
-            <StatusFilter
-              statuses={['High', 'Medium', 'Low']}
-              selectedStatuses={selectedPriorities}
-              onStatusChange={setSelectedPriorities}
-              label="Priority"
-            />
-            <StatusFilter
-              statuses={['Frontend Team', 'Backend Team', 'Mobile Team', 'Data Team', 'DevOps Team', 'Security Team', 'UX Team', 'QA Team']}
-              selectedStatuses={selectedTeams}
-              onStatusChange={setSelectedTeams}
-              label="Team"
-          />
+            <div className="filter-row">
+              <StatusFilter
+                statuses={['Active', 'Planning', 'Completed', 'Blocked']}
+                selectedStatuses={selectedEpicStatuses}
+                onStatusChange={setSelectedEpicStatuses}
+                label="Epic"
+              />
+              <StatusFilter
+                statuses={['Active', 'Planning', 'Completed']}
+                selectedStatuses={selectedTeamStatuses}
+                onStatusChange={setSelectedTeamStatuses}
+                label="Team"
+              />
+              <StatusFilter
+                statuses={['Ready', 'In Progress', 'Completed', 'Blocked']}
+                selectedStatuses={selectedBacklogStatuses}
+                onStatusChange={setSelectedBacklogStatuses}
+                label="Backlog"
+              />
+              <StatusFilter
+                statuses={['Active', 'Planning', 'Completed']}
+                selectedStatuses={selectedSprintStatuses}
+                onStatusChange={setSelectedSprintStatuses}
+                label="Sprint"
+              />
+              <StatusFilter
+                statuses={['High', 'Medium', 'Low']}
+                selectedStatuses={selectedPriorities}
+                onStatusChange={setSelectedPriorities}
+                label="Priority"
+              />
+              <StatusFilter
+                statuses={['Frontend Team', 'Backend Team', 'Mobile Team', 'Data Team', 'DevOps Team', 'Security Team', 'UX Team', 'QA Team']}
+                selectedStatuses={selectedTeams}
+                onStatusChange={setSelectedTeams}
+                label="Teams"
+              />
+            </div>
+            <div className="filter-actions-row">
+              <button 
+                className="filter-action-btn"
+                onClick={() => {
+                  setSelectedEpicStatuses([]);
+                  setSelectedTeamStatuses([]);
+                  setSelectedBacklogStatuses([]);
+                  setSelectedSprintStatuses([]);
+                  setSelectedPriorities([]);
+                  setSelectedTeams([]);
+                }}
+              >
+                Clear All
+              </button>
+              <button 
+                className="filter-action-btn"
+                onClick={() => {
+                  setSelectedEpicStatuses(['Active', 'Planning', 'Completed', 'Blocked']);
+                  setSelectedTeamStatuses(['Active', 'Planning', 'Completed']);
+                  setSelectedBacklogStatuses(['Ready', 'In Progress', 'Completed', 'Blocked']);
+                  setSelectedSprintStatuses(['Active', 'Planning', 'Completed']);
+                  setSelectedPriorities(['High', 'Medium', 'Low']);
+                  setSelectedTeams(['Frontend Team', 'Backend Team', 'Mobile Team', 'Data Team', 'DevOps Team', 'Security Team', 'UX Team', 'QA Team']);
+                }}
+              >
+                Select All
+              </button>
+            </div>
         </div>
       </div>
 
@@ -3279,13 +2886,7 @@ export default function DevOpsAnalytics({ sidebarCollapsed }) {
         sprints={displayData.sprints || []}
       />
 
-      {/* Risk Management & Compliance Section */}
-      <RiskManagement
-        teams={displayData.teams || []}
-        epics={displayData.epics || []}
-        backlog={displayData.backlog || []}
-        sprints={displayData.sprints || []}
-      />
+
 
         </div>
       </div>
